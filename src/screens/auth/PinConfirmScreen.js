@@ -1,13 +1,11 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
 import PinInputScreen from './PinInputScreen';
 
 export default function PinConfirmScreen({ navigation, route }) {
   const { firstPin } = route.params ?? {};
-  const { savePin }  = useAuth();
 
-  const onConfirm = async (pin) => {
+  const onConfirm = (pin) => {
     if (pin !== firstPin) {
       Alert.alert(
         'PINs do not match',
@@ -16,10 +14,8 @@ export default function PinConfirmScreen({ navigation, route }) {
       );
       return;
     }
-    // Save PIN to device via AuthContext
-    await savePin(pin);
-    // Return to Register with pinSet flag
-    navigation.navigate('Register', { pinSet: true });
+    // Pass confirmed PIN back to Register screen
+    navigation.navigate('Register', { pin });
   };
 
   return (

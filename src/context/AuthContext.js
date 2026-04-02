@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On app start — try to restore session from stored token
   useEffect(() => {
     authApi.getMe()
       .then((u) => setUser(u ?? null))
@@ -16,59 +15,61 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Login: verify PIN locally, then load user from stored token
   const login = async (email, pin) => {
-    // 1. Check PIN stored on device
     const storedPin   = await SecureStore.getItemAsync('userPin');
     const storedEmail = await SecureStore.getItemAsync('userEmail');
 
     if (storedPin && storedEmail) {
-      // Returning user — verify PIN locally
+      // Returning user — verify PIN locally first
       if (pin !== storedPin) throw new Error('Invalid PIN');
-      if (email.toLowerCase() !== storedEmail.toLowerCase()) throw new Error('Invalid email');
-      // Load user profile from stored token
+      if (email.trim().toLowerCase() !== storedEmail.trim().toLowerCase()) {
+        throw new Error('Invalid email');
+      }
+      // Token still valid? Use it
       const u = await authApi.getMe();
-      if (!u) throw new Error('Session expired');
-      setUser(u);
-      return u;
+      if (u) { setUser(u); return u; }
+      // Token expired — re-authenticate with API using PIN as password
+      const fresh = await authApi.login({ email, password: pin });
+      setUser(fresh);
+      return fresh;
     } else {
-      // First time login — send to API, then save PIN + email locally
+      // First login on this device — hit API, PIN is the password
       const u = await authApi.login({ email, password: pin });
       await SecureStore.setItemAsync('userPin',   pin);
-      await SecureStore.setItemAsync('userEmail', email.toLowerCase());
+      await SecureStore.setItemAsync('userEmail', email.trim().toLowerCase());
       setUser(u);
       return u;
     }
   };
 
-  // Register: create account, save PIN + email locally
+  // Called from RegisterScreen BEFORE navigating to PinSetup
+  // Stores email so savePin can use it later
   const register = async (data) => {
+    // data.password will be set to the PIN by RegisterScreen after PIN is chosen
     const u = await authApi.register(data);
-    // Save PIN and email so user can log in locally next time
-    const savedPin = await SecureStore.getItemAsync('userPin');
-    if (savedPin) {
-      await SecureStore.setItemAsync('userEmail', data.email.toLowerCase());
+    await SecureStore.setItemAsync('userEmail', data.email.trim().toLowerCase());
+    // Save PIN — data.password IS the PIN
+    if (data.password && data.password !== 'pin-auth') {
+      await SecureStore.setItemAsync('userPin', data.password);
     }
     setUser(u);
     return u;
   };
 
-  // Save PIN after PinSetup (called from PinConfirmScreen)
+  // Called from PinConfirmScreen once PIN is confirmed
   const savePin = async (pin) => {
     await SecureStore.setItemAsync('userPin', pin);
-    // Also save current user email so login can match it
-    if (user?.email) {
-      await SecureStore.setItemAsync('userEmail', user.email.toLowerCase());
+    const email = user?.email ?? await SecureStore.getItemAsync('userEmail');
+    if (email) {
+      await SecureStore.setItemAsync('userEmail', email.trim().toLowerCase());
     }
   };
 
   const logout = async () => {
     await authApi.logout();
-    // Keep PIN and email on device — user should still be able to log back in
     setUser(null);
   };
 
-  // Full logout — clears everything including PIN
   const logoutAndClearPin = async () => {
     await authApi.logout();
     await SecureStore.deleteItemAsync('userPin');

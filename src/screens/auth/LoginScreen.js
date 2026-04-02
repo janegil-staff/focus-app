@@ -25,8 +25,8 @@ export default function LoginScreen({ navigation }) {
     setLoading(true); setError('');
     try {
       await login(email.trim().toLowerCase(), pin);
-    } catch {
-      setError('Invalid email or PIN');
+    } catch (e) {
+      setError(e?.message ?? 'Invalid email or PIN');
     } finally {
       setLoading(false);
     }

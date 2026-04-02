@@ -1,15 +1,22 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  TextInput, SafeAreaView,
+  TextInput, StatusBar, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSize, Spacing } from '../../theme';
 
 export default function PinInputScreen({ title, subtitle, onComplete, onBack }) {
   const inputRef = useRef(null);
   const [pin, setPin] = useState('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    StatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      StatusBar.setBackgroundColor(Colors.accentDark);
+      StatusBar.setTranslucent(false);
+    }
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -24,9 +31,12 @@ export default function PinInputScreen({ title, subtitle, onComplete, onBack }) 
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
 
-      {/* Header */}
+      {/* Status bar fill — covers the system menu area with accentDark */}
+      <View style={[styles.statusBarFill, { height: insets.top }]} />
+
+      {/* Header bar */}
       <View style={styles.header}>
         {onBack && (
           <TouchableOpacity style={styles.backBtn} onPress={onBack}>
@@ -48,7 +58,7 @@ export default function PinInputScreen({ title, subtitle, onComplete, onBack }) 
         autoFocus
       />
 
-      {/* Body — tap to re-open keyboard */}
+      {/* Body */}
       <TouchableOpacity
         style={styles.body}
         activeOpacity={1}
@@ -57,7 +67,6 @@ export default function PinInputScreen({ title, subtitle, onComplete, onBack }) 
         <Text style={styles.title}>{title ?? 'Enter PIN'}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
-        {/* 4 underline slots */}
         <View style={styles.slots}>
           {[0, 1, 2, 3].map((i) => (
             <View key={i} style={styles.slot}>
@@ -73,7 +82,7 @@ export default function PinInputScreen({ title, subtitle, onComplete, onBack }) 
         <Text style={styles.hint}>Tap to open keyboard</Text>
       </TouchableOpacity>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -83,8 +92,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
 
+  statusBarFill: {
+    width: '100%',
+    backgroundColor: Colors.accentDark,
+  },
+
   header: {
-    backgroundColor: Colors.gradientTop,
+    backgroundColor: Colors.accentDark,
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
@@ -152,7 +166,7 @@ const styles = StyleSheet.create({
   digit: {
     fontSize: 32,
     fontWeight: '700',
-    color: Colors.gradientTop,
+    color: Colors.accentDark,
     height: 44,
     lineHeight: 44,
     textAlign: 'center',
@@ -165,7 +179,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   underlineActive: {
-    backgroundColor: Colors.gradientTop,
+    backgroundColor: Colors.accentDark,
   },
 
   hint: {

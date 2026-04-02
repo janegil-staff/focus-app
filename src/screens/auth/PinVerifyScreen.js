@@ -5,15 +5,11 @@ import PinInputScreen from './PinInputScreen';
 
 export default function PinVerifyScreen({ onSuccess, onFallback }) {
   const verify = async (pin) => {
-    const savedPin = await SecureStore.getItemAsync('userPin');
-    if (pin === savedPin) {
+    const saved = await SecureStore.getItemAsync('userPin');
+    if (pin === saved) {
       onSuccess();
     } else {
-      Alert.alert(
-        'Incorrect PIN',
-        'Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Incorrect PIN', 'Please try again.');
     }
   };
 

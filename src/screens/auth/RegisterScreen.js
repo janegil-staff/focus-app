@@ -18,36 +18,41 @@ export default function RegisterScreen({ navigation, route }) {
   const [age,          setAge]          = useState('');
   const [email,        setEmail]        = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
-  const [pinSet,       setPinSet]       = useState(false);
+  const [pin,          setPin]          = useState('');   // actual PIN stored here
   const [tncAccepted,  setTncAccepted]  = useState(false);
   const [infoAccepted, setInfoAccepted] = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
 
-  // Detect when returning from PinConfirm
+  // Receive PIN back from PinConfirm screen
   useEffect(() => {
-    if (route?.params?.pinSet) {
-      setPinSet(true);
+    if (route?.params?.pin) {
+      setPin(route.params.pin);
     }
-  }, [route?.params?.pinSet]);
+  }, [route?.params?.pin]);
 
+  const pinSet   = pin.length === 4;
   const canSubmit = tncAccepted && infoAccepted && pinSet;
 
   const submit = async () => {
     if (!age || !email || !emailConfirm) { setError('Please fill in all required fields'); return; }
-    if (email !== emailConfirm)           { setError('Email addresses do not match'); return; }
-    if (!pinSet)                          { setError('Please create a PIN code'); return; }
-    if (!tncAccepted || !infoAccepted)    { setError('Please accept the terms to continue'); return; }
+    if (email.trim().toLowerCase() !== emailConfirm.trim().toLowerCase()) {
+      setError('Email addresses do not match'); return;
+    }
+    if (!pinSet)                       { setError('Please create a PIN code'); return; }
+    if (!tncAccepted || !infoAccepted) { setError('Please accept the terms to continue'); return; }
+
     setLoading(true); setError('');
     try {
+      // PIN is sent as the password to the API
       await register({
-        name: email.split('@')[0],
-        email: email.trim().toLowerCase(),
-        password: 'pin-auth',
-        age: parseInt(age),
+        name:     email.split('@')[0],
+        email:    email.trim().toLowerCase(),
+        password: pin,   // PIN = password
+        age:      parseInt(age),
       });
-    } catch {
-      setError('Registration failed. Please try again.');
+    } catch (e) {
+      setError(e?.message ?? 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -63,7 +68,6 @@ export default function RegisterScreen({ navigation, route }) {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo + title */}
           <View style={styles.header}>
             <Image
               source={require('../../../assets/images/focus_logo.png')}
@@ -73,7 +77,6 @@ export default function RegisterScreen({ navigation, route }) {
             <Text style={styles.title}>Your personal{'\n'}Focus Diary</Text>
           </View>
 
-          {/* Fields */}
           <View style={styles.fields}>
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -81,7 +84,7 @@ export default function RegisterScreen({ navigation, route }) {
             <Field label="Email*"         value={email}        onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Confirm email*" value={emailConfirm} onChangeText={setEmailConfirm} keyboardType="email-address" />
 
-            {/* PIN row */}
+            {/* PIN row — navigates to PinSetup, returns via route.params.pin */}
             <TouchableOpacity
               style={styles.pinRow}
               onPress={() => navigation.navigate('PinSetup')}
@@ -98,7 +101,6 @@ export default function RegisterScreen({ navigation, route }) {
 
           <View style={{ height: Spacing.lg }} />
 
-          {/* T&C */}
           <TouchableOpacity style={styles.checkRow} onPress={() => setTncAccepted(!tncAccepted)}>
             <View style={[styles.checkbox, tncAccepted && styles.checkboxChecked]}>
               {tncAccepted && <Text style={styles.checkmark}>✓</Text>}
@@ -111,7 +113,6 @@ export default function RegisterScreen({ navigation, route }) {
 
           <View style={{ height: Spacing.md }} />
 
-          {/* Info processing */}
           <TouchableOpacity style={styles.checkRow} onPress={() => setInfoAccepted(!infoAccepted)}>
             <View style={[styles.checkbox, infoAccepted && styles.checkboxChecked]}>
               {infoAccepted && <Text style={styles.checkmark}>✓</Text>}
@@ -123,7 +124,6 @@ export default function RegisterScreen({ navigation, route }) {
 
           <View style={{ height: Spacing.xl }} />
 
-          {/* Submit */}
           <TouchableOpacity
             style={[styles.btn, !canSubmit && styles.btnDisabled]}
             onPress={canSubmit ? submit : undefined}
@@ -175,27 +175,20 @@ const styles = StyleSheet.create({
   bg:     { flex: 1, backgroundColor: BG },
   scroll: { flexGrow: 1, paddingHorizontal: 30, paddingTop: 70, paddingBottom: 50 },
   header: { alignItems: 'center', marginBottom: 36 },
-  logo:   { width: 120, height: 120, borderRadius: 60 },
+  logo:   { width: 120, height: 120, borderRadius: 0 },
   title:  { color: DARK, fontSize: 24, fontWeight: '700', textAlign: 'center', marginTop: 14, lineHeight: 32 },
   fields: { width: '100%' },
   error:  { color: '#C62828', fontSize: FontSize.sm, marginBottom: Spacing.md },
-
   pinRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: LINE,
+    width: '100%', flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: Spacing.lg,
+    paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: LINE,
   },
   pinLabel:   { color: MUTED, fontSize: FontSize.md, fontWeight: '600' },
   pinRight:   { flexDirection: 'row', alignItems: 'center' },
   pinAction:  { color: ACCENT, fontSize: FontSize.md, fontWeight: '700' },
   pinDone:    { color: '#2E7D32' },
   pinChevron: { color: ACCENT, fontSize: FontSize.lg, fontWeight: '700' },
-
   checkRow: { width: '100%', flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   checkbox: {
     width: 22, height: 22, borderRadius: 4,
@@ -207,18 +200,12 @@ const styles = StyleSheet.create({
   checkmark:       { color: '#FFFFFF', fontSize: 13, fontWeight: '700', lineHeight: 16 },
   checkText:       { color: DARK, fontSize: FontSize.sm, lineHeight: 20, flex: 1 },
   checkLink:       { color: DARK, fontWeight: '700', textDecorationLine: 'underline' },
-
   btn: {
-    width: '100%',
-    height: 56,
-    backgroundColor: ACCENT,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ACCENT,
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    width: '100%', height: 56,
+    backgroundColor: ACCENT, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: ACCENT, shadowOpacity: 0.4,
+    shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
   btnDisabled: { opacity: 0.4 },
