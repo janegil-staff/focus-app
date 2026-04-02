@@ -13,29 +13,49 @@ const MUTED  = 'rgba(0,0,0,0.45)';
 const LINE   = '#BDBDBD';
 
 export default function RegisterScreen({ navigation, route }) {
-  const { register } = useAuth();
+  const { register, setPinVerified, user } = useAuth();
+  const navigatedRef = React.useRef(false);
 
-  const [age,          setAge]          = useState('');
+  const [age, setAge] = useState('');
   const [email,        setEmail]        = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
-  const [pin,          setPin]          = useState('');   // actual PIN stored here
+  const [pin,          setPin]          = useState('');
   const [tncAccepted,  setTncAccepted]  = useState(false);
   const [infoAccepted, setInfoAccepted] = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
 
-  // Receive PIN back from PinConfirm screen
+  // Restore form state when returning from PinSetup/PinConfirm
   useEffect(() => {
-    if (route?.params?.pin) {
-      setPin(route.params.pin);
-    }
-  }, [route?.params?.pin]);
+    const p = route?.params ?? {};
+    if (p.pin)          setPin(p.pin);
+    if (p.age) setAge(p.age);
+    if (p.email)        setEmail(p.email);
+    if (p.emailConfirm) setEmailConfirm(p.emailConfirm);
+    if (p.tncAccepted  !== undefined) setTncAccepted(p.tncAccepted);
+    if (p.infoAccepted !== undefined) setInfoAccepted(p.infoAccepted);
+  }, [route?.params]);
 
-  const pinSet   = pin.length === 4;
+  // Navigate to Welcome once user is set after register
+  useEffect(() => {
+    if (user && !navigatedRef.current) {
+      navigatedRef.current = true;
+      navigation.navigate('Welcome');
+    }
+  }, [user]);
+
+  const pinSet    = pin.length === 4;
   const canSubmit = tncAccepted && infoAccepted && pinSet;
 
+  const goToPinSetup = () => {
+    navigation.navigate('PinSetup', {
+      returnParams: { age, email, emailConfirm, tncAccepted, infoAccepted },
+    });
+  };
+
   const submit = async () => {
-    if (!age || !email || !emailConfirm) { setError('Please fill in all required fields'); return; }
+    if (!age.trim()) { setError('Please enter your age'); return; }
+    if (!email.trim()) { setError('Please enter your email'); return; }
     if (email.trim().toLowerCase() !== emailConfirm.trim().toLowerCase()) {
       setError('Email addresses do not match'); return;
     }
@@ -44,15 +64,16 @@ export default function RegisterScreen({ navigation, route }) {
 
     setLoading(true); setError('');
     try {
-      // PIN is sent as the password to the API
       await register({
         name:     email.split('@')[0],
         email:    email.trim().toLowerCase(),
-        password: pin,   // PIN = password
-        age:      parseInt(age),
+        password: pin,
+        language: 'no',
       });
+      // Explicitly mark PIN as verified → RootNavigator switches to AppStack
+      setPinVerified(true);
     } catch (e) {
-      setError(e?.message ?? 'Registration failed. Please try again.');
+      setError(e?.response?.data?.error ?? e?.message ?? 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -80,15 +101,11 @@ export default function RegisterScreen({ navigation, route }) {
           <View style={styles.fields}>
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Field label="Age*"           value={age}          onChangeText={(t) => setAge(t.replace(/\D/g, ''))} keyboardType="number-pad" />
+            <Field label="Age*" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
             <Field label="Email*"         value={email}        onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Confirm email*" value={emailConfirm} onChangeText={setEmailConfirm} keyboardType="email-address" />
 
-            {/* PIN row — navigates to PinSetup, returns via route.params.pin */}
-            <TouchableOpacity
-              style={styles.pinRow}
-              onPress={() => navigation.navigate('PinSetup')}
-            >
+            <TouchableOpacity style={styles.pinRow} onPress={goToPinSetup}>
               <Text style={styles.pinLabel}>PIN code*</Text>
               <View style={styles.pinRight}>
                 <Text style={[styles.pinAction, pinSet && styles.pinDone]}>
@@ -145,7 +162,7 @@ export default function RegisterScreen({ navigation, route }) {
   );
 }
 
-function Field({ label, value, onChangeText, keyboardType, secureTextEntry }) {
+function Field({ label, value, onChangeText, keyboardType, secureTextEntry, autoCapitalize }) {
   return (
     <View style={f.wrap}>
       <Text style={f.label}>{label}</Text>
@@ -155,7 +172,7 @@ function Field({ label, value, onChangeText, keyboardType, secureTextEntry }) {
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
-        autoCapitalize="none"
+        autoCapitalize={autoCapitalize ?? 'none'}
         placeholderTextColor="rgba(0,0,0,0.25)"
         selectionColor={ACCENT}
       />

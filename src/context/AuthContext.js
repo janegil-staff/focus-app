@@ -5,8 +5,10 @@ import { authApi } from '../api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user,        setUser]        = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [pinVerified, setPinVerified] = useState(false);
+  const [isNewUser,    setIsNewUser]    = useState(false);
 
   useEffect(() => {
     authApi.getMe()
@@ -19,54 +21,69 @@ export function AuthProvider({ children }) {
     const storedPin   = await SecureStore.getItemAsync('userPin');
     const storedEmail = await SecureStore.getItemAsync('userEmail');
 
-    if (storedPin && storedEmail) {
-      // Returning user — verify PIN locally first
-      if (pin !== storedPin) throw new Error('Invalid PIN');
-      if (email.trim().toLowerCase() !== storedEmail.trim().toLowerCase()) {
-        throw new Error('Invalid email');
+    const cleanEntered = email.trim().toLowerCase();
+    const cleanStored  = (storedEmail ?? '').trim().toLowerCase();
+
+    console.log('[AUTH] entered:', cleanEntered);
+    console.log('[AUTH] stored: ', cleanStored);
+    console.log('[AUTH] match:  ', cleanEntered === cleanStored);
+
+    if (storedPin) {
+      // Verify PIN
+      if (pin !== storedPin) throw new Error('Incorrect PIN');
+
+      // Verify email only if we have a stored email
+      if (cleanStored && cleanEntered !== cleanStored) {
+        throw new Error(`Email does not match (stored: ${cleanStored})`);
       }
-      // Token still valid? Use it
+
+      // Try existing token
       const u = await authApi.getMe();
-      if (u) { setUser(u); return u; }
-      // Token expired — re-authenticate with API using PIN as password
-      const fresh = await authApi.login({ email, password: pin });
+      if (u) {
+        setPinVerified(true);
+        setUser(u);
+        return u;
+      }
+
+      // Token expired — re-auth via API
+      const fresh = await authApi.login({ email: cleanEntered, password: pin });
+      // Update stored email in case it changed
+      await SecureStore.setItemAsync('userEmail', cleanEntered);
+      setPinVerified(true);
       setUser(fresh);
       return fresh;
-    } else {
-      // First login on this device — hit API, PIN is the password
-      const u = await authApi.login({ email, password: pin });
-      await SecureStore.setItemAsync('userPin',   pin);
-      await SecureStore.setItemAsync('userEmail', email.trim().toLowerCase());
-      setUser(u);
-      return u;
     }
-  };
 
-  // Called from RegisterScreen BEFORE navigating to PinSetup
-  // Stores email so savePin can use it later
-  const register = async (data) => {
-    // data.password will be set to the PIN by RegisterScreen after PIN is chosen
-    const u = await authApi.register(data);
-    await SecureStore.setItemAsync('userEmail', data.email.trim().toLowerCase());
-    // Save PIN — data.password IS the PIN
-    if (data.password && data.password !== 'pin-auth') {
-      await SecureStore.setItemAsync('userPin', data.password);
-    }
+    // No stored PIN — first login on this device
+    const u = await authApi.login({ email: cleanEntered, password: pin });
+    await SecureStore.setItemAsync('userPin',   pin);
+    await SecureStore.setItemAsync('userEmail', cleanEntered);
+    setPinVerified(true);
     setUser(u);
     return u;
   };
 
-  // Called from PinConfirmScreen once PIN is confirmed
+  const register = async (data) => {
+    const u = await authApi.register(data);
+    const cleanEmail = data.email.trim().toLowerCase();
+    await SecureStore.setItemAsync('userEmail', cleanEmail);
+    await SecureStore.setItemAsync('userPin',   data.password);
+    console.log('[AUTH] registered, saved email:', cleanEmail);
+    setIsNewUser(true);
+    setPinVerified(true);
+    setUser(u);
+    return u;
+  };
+
   const savePin = async (pin) => {
     await SecureStore.setItemAsync('userPin', pin);
     const email = user?.email ?? await SecureStore.getItemAsync('userEmail');
-    if (email) {
-      await SecureStore.setItemAsync('userEmail', email.trim().toLowerCase());
-    }
+    if (email) await SecureStore.setItemAsync('userEmail', email.trim().toLowerCase());
   };
 
   const logout = async () => {
     await authApi.logout();
+    setPinVerified(false);
     setUser(null);
   };
 
@@ -74,13 +91,15 @@ export function AuthProvider({ children }) {
     await authApi.logout();
     await SecureStore.deleteItemAsync('userPin');
     await SecureStore.deleteItemAsync('userEmail');
+    setPinVerified(false);
     setUser(null);
   };
 
   return (
     <AuthContext.Provider value={{
-      user, loading,
-      login, register, logout, logoutAndClearPin, savePin,
+      user, loading, pinVerified,
+      login, register, logout, logoutAndClearPin, savePin, isNewUser,
+      setPinVerified,
     }}>
       {children}
     </AuthContext.Provider>

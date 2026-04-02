@@ -1,11 +1,12 @@
 import React from 'react';
 import { Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import PinInputScreen from './PinInputScreen';
 
 export default function PinConfirmScreen({ navigation, route }) {
-  const { firstPin } = route.params ?? {};
+  const { firstPin, onDone } = route.params ?? {};
 
-  const onConfirm = (pin) => {
+  const onConfirm = async (pin) => {
     if (pin !== firstPin) {
       Alert.alert(
         'PINs do not match',
@@ -14,8 +15,12 @@ export default function PinConfirmScreen({ navigation, route }) {
       );
       return;
     }
-    // Pass confirmed PIN back to Register screen
-    navigation.navigate('Register', { pin });
+
+    await SecureStore.setItemAsync('userPin', pin);
+
+    if (onDone) onDone(pin);
+
+    navigation.navigate('Welcome');
   };
 
   return (

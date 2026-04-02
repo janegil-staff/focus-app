@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as SecureStore from 'expo-secure-store';
 
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../theme';
@@ -13,6 +12,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import PinSetupScreen       from '../screens/auth/PinSetupScreen';
 import PinConfirmScreen     from '../screens/auth/PinConfirmScreen';
 import PinVerifyScreen      from '../screens/auth/PinVerifyScreen';
+import WelcomeScreen        from '../screens/onboarding/WelcomeScreen';
 import HomeScreen           from '../screens/home/HomeScreen';
 import LogEntryScreen       from '../screens/log/LogEntryScreen';
 import LogHistoryScreen     from '../screens/log/LogHistoryScreen';
@@ -29,6 +29,23 @@ function AuthStack() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="PinSetup"       component={PinSetupScreen} />
       <Stack.Screen name="PinConfirm"     component={PinConfirmScreen} />
+      <Stack.Screen name="Welcome"        component={WelcomeScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function PinVerifyStack() {
+  const { setPinVerified } = useAuth();
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="PinVerify">
+        {() => (
+          <PinVerifyScreen
+            onSuccess={() => setPinVerified(true)}
+            onFallback={() => setPinVerified(true)}
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }
@@ -47,21 +64,18 @@ function AppStack() {
   );
 }
 
+function RootNavigator() {
+  const { user, pinVerified } = useAuth();
+
+  if (!user) return <AuthStack />;
+  if (!pinVerified) return <PinVerifyStack />;
+  return <AppStack />;
+}
+
 export default function AppNavigator() {
-  const { user, loading } = useAuth();
-  const [pinChecked, setPinChecked] = useState(false);
-  const [needsPin,   setNeedsPin]   = useState(false);
-  const [pinPassed,  setPinPassed]  = useState(false);
+  const { loading } = useAuth();
 
-  useEffect(() => {
-    if (!user) { setPinChecked(true); return; }
-    SecureStore.getItemAsync('userPin').then((pin) => {
-      setNeedsPin(!!pin);
-      setPinChecked(true);
-    });
-  }, [user]);
-
-  if (loading || !pinChecked) {
+  if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.bg, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color={Colors.accent} size="large" />
@@ -69,18 +83,9 @@ export default function AppNavigator() {
     );
   }
 
-  if (user && needsPin && !pinPassed) {
-    return (
-      <PinVerifyScreen
-        onSuccess={() => setPinPassed(true)}
-        onFallback={() => { setNeedsPin(false); setPinPassed(false); }}
-      />
-    );
-  }
-
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      <RootNavigator />
     </NavigationContainer>
   );
 }
