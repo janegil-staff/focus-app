@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import { useLogs } from '../../context/LogsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Spacing, FontSize, Radius } from '../../theme';
+import api from '../../api/client';
 
 const LANGUAGES = [
   { code: 'no', label: 'Norwegian', flag: '🇳🇴' },
@@ -56,15 +58,61 @@ const GENDERS = [
 ];
 
 export default function ProfileScreen({ navigation }) {
-  const { user, logout, logoutAndClearPin } = useAuth();
+  const { user, logout, logoutAndClearPin, updateUser } = useAuth();
   const { theme, override, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const [gender, setGender] = useState(user?.gender ?? 'undefined');
+  const [gender,  setGender]  = useState(user?.gender ?? 'undefined');
+  const [ageVal,  setAgeVal]  = useState(String(user?.age ?? ''));
+  const [saving,  setSaving]  = useState(false);
 
-  const lang = LANGUAGES.find((l) => l.code === (user?.language ?? 'no')) ?? LANGUAGES[0];
-  const age  = user?.age ?? '—';
+  const originalAge    = String(user?.age ?? '');
+  const originalGender = user?.gender ?? 'undefined';
+  const isDirty = ageVal !== originalAge || gender !== originalGender;
+
+  const lang  = LANGUAGES.find((l) => l.code === (user?.language ?? 'no')) ?? LANGUAGES[0];
   const email = user?.email ?? '—';
+
+  const saveChanges = async () => {
+    setSaving(true);
+    try {
+      const body = {};
+      if (ageVal) body.age = parseInt(ageVal);
+      // Only send gender if it's a real value (not 'undefined')
+      if (gender && gender !== 'undefined') body.gender = gender;
+
+      const res = await api.put('/api/patient/profile', body);
+      if (res.data?.data) {
+        updateUser(res.data.data);
+      }
+      // Update local user state
+      if (res.data?.data) {
+        // AuthContext doesn't have an updateUser method yet,
+        // so we just show success
+      }
+      Alert.alert('Saved', 'Your profile has been updated.');
+    } catch (e) {
+      Alert.alert('Error', 'Could not save changes.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (isDirty) {
+      Alert.alert(
+        'Save changes?',
+        'You have unsaved changes. Do you want to save them?',
+        [
+          { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
+          { text: 'Save',    style: 'default',     onPress: async () => { await saveChanges(); navigation.goBack(); } },
+          { text: 'Cancel',  style: 'cancel' },
+        ]
+      );
+    } else {
+      navigation.goBack();
+    }
+  };
 
   const s = makeStyles(theme, insets);
 
@@ -91,7 +139,7 @@ export default function ProfileScreen({ navigation }) {
     <View style={s.root}>
       {/* Blue header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerBtn}>
+        <TouchableOpacity onPress={handleBack} style={s.headerBtn}>
           <Text style={s.headerBack}>‹</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>Settings</Text>
@@ -125,11 +173,19 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Age */}
         <View style={s.section}>
-          <View style={s.fieldWrap}>
+          <View style={s.editFieldWrap}>
             <Text style={s.fieldLabel}>Age</Text>
-            <Text style={s.fieldValue}>{age}</Text>
+            <TextInput
+              style={s.editFieldInput}
+              value={ageVal}
+              onChangeText={(t) => setAgeVal(t.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              placeholder="—"
+              placeholderTextColor={theme.textMuted}
+              selectionColor="#1A56DB"
+            />
           </View>
-          <View style={s.fieldLine} />
+          <View style={s.fieldLineFull} />
 
           {/* Email */}
           <View style={s.fieldWrap}>
@@ -242,6 +298,15 @@ const makeStyles = (t, insets) => StyleSheet.create({
     paddingBottom: 10,
   },
   fieldLabel:  { color: t.textMuted, fontSize: FontSize.sm, marginBottom: 2 },
+  editFieldWrap: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 0 },
+  editFieldInput: {
+    color: t.text,
+    fontSize: FontSize.lg,
+    fontWeight: '500',
+    paddingBottom: 10,
+    paddingHorizontal: 0,
+  },
+  fieldLineFull: { height: 1.5, backgroundColor: t.border, width: '100%' },
   fieldValue:  { color: t.text, fontSize: FontSize.lg, fontWeight: '500' },
   fieldLine:   { height: 1, backgroundColor: t.border, marginLeft: 20 },
   fieldChange: { color: t.textMuted, fontSize: FontSize.md },
