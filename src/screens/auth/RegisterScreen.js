@@ -13,10 +13,9 @@ const MUTED  = 'rgba(0,0,0,0.45)';
 const LINE   = '#BDBDBD';
 
 export default function RegisterScreen({ navigation, route }) {
-  const { register, setPinVerified, user } = useAuth();
-  const navigatedRef = React.useRef(false);
+  const { register, setPinVerified } = useAuth();
 
-  const [age, setAge] = useState('');
+  const [age,          setAge]          = useState('');
   const [email,        setEmail]        = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
   const [pin,          setPin]          = useState('');
@@ -29,20 +28,12 @@ export default function RegisterScreen({ navigation, route }) {
   useEffect(() => {
     const p = route?.params ?? {};
     if (p.pin)          setPin(p.pin);
-    if (p.age) setAge(p.age);
+    if (p.age)          setAge(p.age);
     if (p.email)        setEmail(p.email);
     if (p.emailConfirm) setEmailConfirm(p.emailConfirm);
     if (p.tncAccepted  !== undefined) setTncAccepted(p.tncAccepted);
     if (p.infoAccepted !== undefined) setInfoAccepted(p.infoAccepted);
   }, [route?.params]);
-
-  // Navigate to Welcome once user is set after register
-  useEffect(() => {
-    if (user && !navigatedRef.current) {
-      navigatedRef.current = true;
-      navigation.navigate('Welcome');
-    }
-  }, [user]);
 
   const pinSet    = pin.length === 4;
   const canSubmit = tncAccepted && infoAccepted && pinSet;
@@ -54,14 +45,14 @@ export default function RegisterScreen({ navigation, route }) {
   };
 
   const submit = async () => {
-    if (!age.trim()) { setError('Please enter your age'); return; }
+    if (!age.trim())   { setError('Please enter your age'); return; }
     if (!email.trim()) { setError('Please enter your email'); return; }
     if (email.trim().toLowerCase() !== emailConfirm.trim().toLowerCase()) {
       setError('Email addresses do not match'); return;
     }
     if (!pinSet)                       { setError('Please create a PIN code'); return; }
-    if (!tncAccepted || !infoAccepted) { setError('Please accept the terms to continue'); return; }
-
+    if (!tncAccepted || !infoAccepted) { setError('Please accept the terms'); return; }
+console.log( parseInt(age));
     setLoading(true); setError('');
     try {
       await register({
@@ -69,9 +60,11 @@ export default function RegisterScreen({ navigation, route }) {
         email:    email.trim().toLowerCase(),
         password: pin,
         language: 'no',
+        age:      parseInt(age) || undefined,
       });
-      // Explicitly mark PIN as verified → RootNavigator switches to AppStack
-      setPinVerified(true);
+      // setPinVerified is called inside register()
+      // AppNavigator switches to AppStack automatically
+      // WelcomeScreen is the first screen shown (handled in AppNavigator)
     } catch (e) {
       setError(e?.response?.data?.error ?? e?.message ?? 'Registration failed');
     } finally {
@@ -85,10 +78,7 @@ export default function RegisterScreen({ navigation, route }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Image
               source={require('../../../assets/images/focus_logo.png')}
@@ -101,7 +91,7 @@ export default function RegisterScreen({ navigation, route }) {
           <View style={styles.fields}>
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Field label="Age*" value={age} onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
+            <Field label="Age*"           value={age}          onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
             <Field label="Email*"         value={email}        onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Confirm email*" value={emailConfirm} onChangeText={setEmailConfirm} keyboardType="email-address" />
 
@@ -218,12 +208,10 @@ const styles = StyleSheet.create({
   checkText:       { color: DARK, fontSize: FontSize.sm, lineHeight: 20, flex: 1 },
   checkLink:       { color: DARK, fontWeight: '700', textDecorationLine: 'underline' },
   btn: {
-    width: '100%', height: 56,
-    backgroundColor: ACCENT, borderRadius: 10,
+    width: '100%', height: 56, backgroundColor: ACCENT, borderRadius: 10,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: ACCENT, shadowOpacity: 0.4,
-    shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 }, elevation: 6,
   },
   btnDisabled: { opacity: 0.4 },
   btnText:     { color: '#FFFFFF', fontSize: FontSize.md, fontWeight: '800', letterSpacing: 2 },

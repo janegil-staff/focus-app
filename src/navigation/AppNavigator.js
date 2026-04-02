@@ -1,10 +1,11 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useAuth } from '../context/AuthContext';
-import { Colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 import LoginScreen          from '../screens/auth/LoginScreen';
 import RegisterScreen       from '../screens/auth/RegisterScreen';
@@ -29,23 +30,6 @@ function AuthStack() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="PinSetup"       component={PinSetupScreen} />
       <Stack.Screen name="PinConfirm"     component={PinConfirmScreen} />
-      <Stack.Screen name="Welcome"        component={WelcomeScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function PinVerifyStack() {
-  const { setPinVerified } = useAuth();
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="PinVerify">
-        {() => (
-          <PinVerifyScreen
-            onSuccess={() => setPinVerified(true)}
-            onFallback={() => setPinVerified(true)}
-          />
-        )}
-      </Stack.Screen>
     </Stack.Navigator>
   );
 }
@@ -54,6 +38,7 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home"        component={HomeScreen} />
+      <Stack.Screen name="Welcome"     component={WelcomeScreen} />
       <Stack.Screen name="LogEntry"    component={LogEntryScreen} />
       <Stack.Screen name="LogHistory"  component={LogHistoryScreen} />
       <Stack.Screen name="Profile"     component={ProfileScreen} />
@@ -65,26 +50,40 @@ function AppStack() {
 }
 
 function RootNavigator() {
-  const { user, pinVerified } = useAuth();
+  const { user, pinVerified, setPinVerified, isNewUser } = useAuth();
 
   if (!user) return <AuthStack />;
-  if (!pinVerified) return <PinVerifyStack />;
+
+  if (!pinVerified) {
+    return (
+      <PinVerifyScreen
+        onSuccess={() => setPinVerified(true)}
+        onFallback={() => setPinVerified(true)}
+      />
+    );
+  }
+
+  // New user — show Welcome directly without navigation
+  if (isNewUser) return <WelcomeScreen standalone />;
+
   return <AppStack />;
 }
 
 export default function AppNavigator() {
   const { loading } = useAuth();
+  const { scheme }  = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={Colors.accent} size="large" />
+      <View style={{ flex: 1, backgroundColor: '#0A0F1E', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#1A56DB" size="large" />
       </View>
     );
   }
 
   return (
     <NavigationContainer>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <RootNavigator />
     </NavigationContainer>
   );

@@ -1,12 +1,10 @@
 export const Colors = {
-  // Auth screens (white bg)
   accent:       '#1A56DB',
   accentDark:   '#1344B0',
   accentLight:  '#60A5FA',
   accentBg:     '#D6E4FF',
   accentBorder: '#1A56DB33',
 
-  // Dark background screens
   bg:           '#0A0F1E',
   surface:      '#111827',
   surfaceDim:   '#1E2A3A',
@@ -14,26 +12,28 @@ export const Colors = {
   border:       '#1A2E5C',
   borderLight:  '#1A56DB33',
 
-  // Score colors
-  scoreHigh:  '#22C55E',   // 5 - great
-  scoreGood:  '#60A5FA',   // 4 - good
-  scoreMid:   '#FBBF24',   // 3 - okay
-  scoreLow:   '#FB923C',   // 2 - low
-  scoreVLow:  '#EF4444',   // 1 - very low
+  // 1 = best (green), 5 = worst (red)
+  score1: '#22C55E',  // great / very calm
+  score2: '#60A5FA',  // good
+  score3: '#FBBF24',  // okay
+  score4: '#FB923C',  // low / impulsive
+  score5: '#EF4444',  // very bad / very impulsive
 
-  // Text
   text:          '#F0EEF8',
   textSecondary: '#A8B4CC',
   textMuted:     '#5A6A82',
 
-  // General
   error:   '#EF4444',
   success: '#22C55E',
   white:   '#FFFFFF',
-
-  // Button
   btnColor: '#1A56DB',
 };
+
+// Returns color for a score where 1=best, 5=worst
+export function scoreColor(score) {
+  const colors = ['#22C55E', '#60A5FA', '#FBBF24', '#FB923C', '#EF4444'];
+  return colors[(score ?? 3) - 1] ?? '#FBBF24';
+}
 
 export const Spacing = {
   xs:  4,

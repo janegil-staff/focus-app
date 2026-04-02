@@ -2,9 +2,9 @@ import api, { saveTokens, clearTokens, getToken } from './client';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
-  register: async ({ name, email, password, language = 'no', clinicianCode }) => {
+  register: async ({ age, name, email, password, language = 'no', clinicianCode }) => {
     const res = await api.post('/api/auth/patient/register', {
-      name, email, password, language,
+      age, name, email, password, language,
       ...(clinicianCode && { clinicianCode }),
     });
     const { accessToken, refreshToken, patient } = res.data.data;

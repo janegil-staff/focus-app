@@ -65,6 +65,7 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const u = await authApi.register(data);
+   
     const cleanEmail = data.email.trim().toLowerCase();
     await SecureStore.setItemAsync('userEmail', cleanEmail);
     await SecureStore.setItemAsync('userPin',   data.password);
@@ -98,7 +99,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, loading, pinVerified,
-      login, register, logout, logoutAndClearPin, savePin, isNewUser,
+      login, register, logout, logoutAndClearPin, savePin, isNewUser, setIsNewUser,
       setPinVerified,
     }}>
       {children}
