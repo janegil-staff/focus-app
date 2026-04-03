@@ -17,9 +17,6 @@ function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// ── Stat row icons — contextually relevant ─────────────────────────────────────
-
-// Days logged — calendar with checkmark
 function IconCalendarCheck({ color, size = 32 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -32,7 +29,6 @@ function IconCalendarCheck({ color, size = 32 }) {
   );
 }
 
-// Avg mood — smiley face
 function IconMood({ color, size = 32 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -44,21 +40,18 @@ function IconMood({ color, size = 32 }) {
   );
 }
 
-// Avg focus — target / bullseye
 function IconFocus({ color, size = 32 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <Circle cx="16" cy="16" r="13" stroke={color} strokeWidth="2" />
       <Circle cx="16" cy="16" r="8"  stroke={color} strokeWidth="2" />
       <Circle cx="16" cy="16" r="3"  fill={color} />
-      {/* Arrow pointing to center */}
       <Line x1="26" y1="6" x2="19" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
       <Polyline points="23,6 26,6 26,9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-// Avg sleep — moon + stars
 function IconSleep({ color, size = 32 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -73,7 +66,6 @@ function IconSleep({ color, size = 32 }) {
   );
 }
 
-// Medication — pill capsule
 function IconPill({ color, size = 32 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -83,8 +75,6 @@ function IconPill({ color, size = 32 }) {
     </Svg>
   );
 }
-
-// ── Grid icons ─────────────────────────────────────────────────────────────────
 
 function IconMyData({ color, size = 46 }) {
   return (
@@ -139,7 +129,6 @@ function IconMedication({ color, size = 46 }) {
   );
 }
 
-// ── Wave background ────────────────────────────────────────────────────────────
 function WaveBackground({ color }) {
   return (
     <Svg width={width} height={300} viewBox={`0 0 ${width} 300`} style={StyleSheet.absoluteFill}>
@@ -150,7 +139,6 @@ function WaveBackground({ color }) {
   );
 }
 
-// ── Clipboard header icon ──────────────────────────────────────────────────────
 function ClipboardIcon() {
   return (
     <Svg width={26} height={26} viewBox="0 0 28 28" fill="none">
@@ -162,10 +150,9 @@ function ClipboardIcon() {
   );
 }
 
-const STAT_ICONS  = [IconCalendarCheck, IconMood, IconFocus, IconSleep, IconPill];
-const GRID_ICONS  = [IconMyData, IconMyDiary, IconShareData, IconMedication];
+const STAT_ICONS = [IconCalendarCheck, IconMood, IconFocus, IconSleep, IconPill];
+const GRID_ICONS = [IconMyData, IconMyDiary, IconShareData, IconMedication];
 
-// ── Screen ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const { user }  = useAuth();
   const insets    = useSafeAreaInsets();
@@ -195,7 +182,7 @@ export default function HomeScreen({ navigation }) {
   ];
 
   const menuItems = [
-    { labelKey: 'myData',       screen: 'LogHistory' },
+    { labelKey: 'myData',       screen: 'Calendar' },  // ← opens CalendarScreen
     { labelKey: 'myDiary',      screen: 'LogHistory' },
     { labelKey: 'shareData',    screen: 'Profile' },
     { labelKey: 'myMedication', screen: 'Medications' },
@@ -204,7 +191,6 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
 
-      {/* Header — horizontal gradient */}
       <LinearGradient
         colors={[theme.accent, theme.accentDark ?? '#2D4A6E']}
         start={{ x: 0, y: 0.5 }}
@@ -228,7 +214,6 @@ export default function HomeScreen({ navigation }) {
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Stats */}
         <Text style={s.sectionTitle}>{t.last30days}</Text>
         <View style={s.statsList}>
           {statRows.map((row) => {
@@ -243,7 +228,6 @@ export default function HomeScreen({ navigation }) {
           })}
         </View>
 
-        {/* Grid */}
         <View style={s.gridWrap}>
           <WaveBackground color={theme.accent} />
           <View style={s.grid}>
@@ -267,7 +251,6 @@ export default function HomeScreen({ navigation }) {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      {/* Bottom button — horizontal gradient, slim, flush to safe area */}
       <View style={[s.bottomWrap, { paddingBottom: (insets.bottom || 16) + Spacing.md }]}>
         <TouchableOpacity
           onPress={() => navigation.navigate('LogEntry', { date: today, log: todayLog })}
