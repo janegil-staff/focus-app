@@ -8,6 +8,7 @@ import { useLogs } from '../../context/LogsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LangContext';
 import { Spacing, FontSize, Radius } from '../../theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // ── Score colors: 1=worst(red) → 5=best(green) ────────────────────────────────
 const SCORE_COLORS = {
@@ -284,35 +285,42 @@ export default function LogHistoryScreen({ navigation, route }) {
   return (
     <View style={[s.root, { backgroundColor: theme.bgSecondary ?? '#F0F4F8' }]}>
 
-      {/* Header */}
+      {/* Blue header — back button and title only */}
       <View style={[s.header, { backgroundColor: PRIMARY, paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
           <Text style={s.back}>‹</Text>
         </TouchableOpacity>
-
-        {/* Tab buttons */}
-        <View style={s.tabs}>
-          <TouchableOpacity
-            style={[s.tab, activeTab === 'calendar' && s.tabActive]}
-            onPress={() => setActiveTab('calendar')}
-            activeOpacity={0.8}
-          >
-            <Text style={[s.tabText, activeTab === 'calendar' && s.tabTextActive]}>
-              {t.calendar ?? 'Calendar'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.tab, activeTab === 'diary' && s.tabActive]}
-            onPress={() => setActiveTab('diary')}
-            activeOpacity={0.8}
-          >
-            <Text style={[s.tabText, activeTab === 'diary' && s.tabTextActive]}>
-              {t.history ?? 'Diary'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
+        <Text style={s.headerTitle}>{t.myDiary ?? 'My Diary'}</Text>
         <View style={{ width: 40 }} />
+      </View>
+
+      {/* Tab buttons — below the blue header on white background */}
+      <View style={s.tabBar}>
+        {['calendar', 'diary'].map((tab) => {
+          const isActive = activeTab === tab;
+          const label = tab === 'calendar' ? (t.calendar ?? 'Calendar') : (t.diary ?? 'Diary');
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={[s.tab, isActive && s.tabActive]}
+              onPress={() => setActiveTab(tab)}
+              activeOpacity={0.8}
+            >
+              {isActive ? (
+                <LinearGradient
+                  colors={[theme.accent ?? '#4a7ab5', theme.accentDark ?? '#2D4A6E']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={s.tabGradient}
+                >
+                  <Text style={s.tabTextActive}>{label}</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={s.tabText}>{label}</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Calendar tab */}
@@ -396,26 +404,40 @@ const makeStyles = (t, insets) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
-  backBtn: { width: 40 },
-  back:    { color: '#fff', fontSize: 30 },
+  backBtn:     { width: 40 },
+  back:        { color: '#fff', fontSize: 30 },
+  headerTitle: { flex: 1, color: '#fff', fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
 
-  tabs: {
-    flex: 1,
+  tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    padding: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: t.border ?? '#e8eef5',
   },
   tab: {
-    flex: 1, paddingVertical: 7,
-    borderRadius: 17,
+    flex: 1,
+    borderRadius: 6,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: t.border ?? '#dde5ee',
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
   },
-  tabActive:     { backgroundColor: '#fff' },
-  tabText:       { color: 'rgba(255,255,255,0.8)', fontSize: FontSize.sm, fontWeight: '600' },
-  tabTextActive: { color: t.accent ?? '#4a7ab5', fontWeight: '700' },
+  tabActive:     { borderColor: t.accent ?? '#4a7ab5', shadowOpacity: 0, elevation: 0, overflow: 'hidden', paddingVertical: 0 },
+  tabGradient:   { width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 16 },
+  tabText:       { color: t.textMuted ?? '#8fa8c8', fontSize: FontSize.sm, fontWeight: '600' },
+  tabTextActive: { color: '#fff', fontWeight: '700' },
 
   list:  { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: 40 },
   row: {

@@ -78,6 +78,29 @@ const LANG_MAP = {
     cancel:         'Cancel',
     errorSave:      'Failed to save log',
 
+    // Log form
+    logDay:         'Log day',
+    missingFields:  'Missing fields',
+    missingFieldsMsg: 'Please rate mood, focus, sleep, energy and impulsivity before saving.',
+    medicationTaken: 'Medication taken',
+    medicationNotes: 'Notes about medication…',
+    triggers:       'Triggers',
+    writeAboutDay:  'Write something about your day…',
+    activity:       'Activity',
+    screenTimeH:    'Screen time (h)',
+
+    // Trigger options
+    triggerStress:        'Stress',
+    triggerPoorSleep:     'Poor sleep',
+    triggerCaffeine:      'Caffeine',
+    triggerAlcohol:       'Alcohol',
+    triggerScreenOverload:'Screen overload',
+    triggerNoExercise:    'No exercise',
+    triggerSkippedMed:    'Skipped medication',
+    triggerNoise:         'Noise',
+    triggerSocialOverload:'Social overload',
+    triggerDiet:          'Diet',
+
     // Score labels
     scores: {
       mood:        ['Very good', 'Good', 'Okay', 'Bad', 'Very bad'],
@@ -88,6 +111,22 @@ const LANG_MAP = {
     },
     scoreBest:      '1 = Best',
     scoreWorst:     '5 = Worst',
+
+    // Calendar
+    calendar:         'Calendar',
+    diary:            'Diary',
+    monthSummary:     'Month summary',
+    daysLoggedShort:  'Days logged',
+    avgScore:         'Avg. score',
+    missing:          'Missing',
+    scoreBreakdown:   'Score breakdown',
+    scoreVeryLow:     'Very low',
+    scoreLow:         'Low',
+    scoreModerate:    'Moderate',
+    scoreGood:        'Good',
+    scoreExcellent:   'Excellent',
+    months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    weekdays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
 
     // History
     history:        'History',
@@ -187,6 +226,28 @@ const LANG_MAP = {
     save:           'Lagre',
     cancel:         'Avbryt',
     errorSave:      'Kunne ikke lagre loggen',
+
+    logDay:         'Logg dag',
+    missingFields:  'Manglende felt',
+    missingFieldsMsg: 'Vennligst vurder humør, fokus, søvn, energi og impulsivitet før du lagrer.',
+    medicationTaken: 'Tok medisin',
+    medicationNotes: 'Notater om medisin…',
+    triggers:       'Utløsere',
+    writeAboutDay:  'Skriv noe om dagen din…',
+    activity:       'Aktivitet',
+    screenTimeH:    'Skjermtid (t)',
+
+    triggerStress:        'Stress',
+    triggerPoorSleep:     'Dårlig søvn',
+    triggerCaffeine:      'Koffein',
+    triggerAlcohol:       'Alkohol',
+    triggerScreenOverload:'For mye skjerm',
+    triggerNoExercise:    'Ingen trening',
+    triggerSkippedMed:    'Glemte medisin',
+    triggerNoise:         'Støy',
+    triggerSocialOverload:'For mye sosialt',
+    triggerDiet:          'Kosthold',
+
     scores: {
       mood:        ['Veldig bra', 'Bra', 'OK', 'Dårlig', 'Veldig dårlig'],
       focus:       ['Utmerket', 'Bra', 'OK', 'Distrahert', 'Kan ikke fokusere'],
@@ -196,6 +257,21 @@ const LANG_MAP = {
     },
     scoreBest:      '1 = Best',
     scoreWorst:     '5 = Verst',
+
+    calendar:         'Kalender',
+    monthSummary:     'Månedsoversikt',
+    daysLoggedShort:  'Dager logget',
+    avgScore:         'Snittskår',
+    missing:          'Mangler',
+    scoreBreakdown:   'Skårfordeling',
+    scoreVeryLow:     'Veldig lav',
+    scoreLow:         'Lav',
+    scoreModerate:    'Middels',
+    scoreGood:        'Bra',
+    scoreExcellent:   'Utmerket',
+    months: ['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'],
+    weekdays: ['Man','Tir','Ons','Tor','Fre','Lør','Søn'],
+
     history:        'Historikk',
     noLogs:         'Ingen logger ennå',
     settings:       'Innstillinger',
@@ -249,7 +325,7 @@ const LANG_MAP = {
     welcomeTitle: 'Välkommen! 👋',
     welcomeText1: 'FocusApp hjälper dig spåra dagligt humör, fokus, sömn och energi.',
     welcomeText2: 'Logga en gång om dagen och se dina mönster över tid.',
-    letsStart: "KOM IGÅNG",
+    letsStart: 'KOM IGÅNG',
     howDidYouFeel: 'Hur mådde du?', adhdSymptoms: 'ADHD-symptom',
     sleepTasks: 'Sömn och uppgifter', medicationSec: 'Medicinering',
     notes: 'Anteckningar', mood: 'Humör', energy: 'Energi', focus: 'Fokus',
@@ -257,6 +333,17 @@ const LANG_MAP = {
     tasksCompleted: 'Slutförda uppgifter', screenTime: 'Skärmtid',
     tookMedToday: 'Tog medicin idag', howWasYourDay: 'Hur var din dag?',
     saveLog: 'Spara logg', save: 'Spara', cancel: 'Avbryt', errorSave: 'Kunde inte spara',
+
+    logDay: 'Logga dag', missingFields: 'Saknade fält',
+    missingFieldsMsg: 'Vänligen betygsätt humör, fokus, sömn, energi och impulsivitet innan du sparar.',
+    medicationTaken: 'Tog medicin', medicationNotes: 'Anteckningar om medicin…',
+    triggers: 'Utlösare', writeAboutDay: 'Skriv något om din dag…',
+    activity: 'Aktivitet', screenTimeH: 'Skärmtid (h)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Dålig sömn', triggerCaffeine: 'Koffein',
+    triggerAlcohol: 'Alkohol', triggerScreenOverload: 'För mycket skärm',
+    triggerNoExercise: 'Ingen träning', triggerSkippedMed: 'Glömt medicin',
+    triggerNoise: 'Buller', triggerSocialOverload: 'För mycket socialt', triggerDiet: 'Kost',
+
     scores: {
       mood: ['Mycket bra','Bra','OK','Dåligt','Mycket dåligt'],
       focus: ['Utmärkt','Bra','OK','Distraherad','Kan inte fokusera'],
@@ -265,6 +352,16 @@ const LANG_MAP = {
       impulsivity: ['Mycket lugn','Lugn','Lite impulser','Impulsiv','Mycket impulsiv'],
     },
     scoreBest: '1 = Bäst', scoreWorst: '5 = Sämst',
+
+    calendar: 'Kalender',
+    diary: 'Dagbok', monthSummary: 'Månadssammanfattning',
+    daysLoggedShort: 'Dagar loggade', avgScore: 'Snittpoäng', missing: 'Saknas',
+    scoreBreakdown: 'Poängfördelning',
+    scoreVeryLow: 'Mycket låg', scoreLow: 'Låg', scoreModerate: 'Medel',
+    scoreGood: 'Bra', scoreExcellent: 'Utmärkt',
+    months: ['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'],
+    weekdays: ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'],
+
     history: 'Historik', noLogs: 'Inga loggar än',
     settings: 'Inställningar', chooseGender: 'Välj kön',
     female: 'Kvinna', male: 'Man', undefined: 'Odefinierad',
@@ -311,6 +408,17 @@ const LANG_MAP = {
     tasksCompleted: 'Afsluttede opgaver', screenTime: 'Skærmtid',
     tookMedToday: 'Tog medicin i dag', howWasYourDay: 'Hvordan var din dag?',
     saveLog: 'Gem log', save: 'Gem', cancel: 'Annuller', errorSave: 'Kunne ikke gemme',
+
+    logDay: 'Log dag', missingFields: 'Manglende felter',
+    missingFieldsMsg: 'Vurder venligst humør, fokus, søvn, energi og impulsivitet, inden du gemmer.',
+    medicationTaken: 'Tog medicin', medicationNotes: 'Noter om medicin…',
+    triggers: 'Udløsere', writeAboutDay: 'Skriv noget om din dag…',
+    activity: 'Aktivitet', screenTimeH: 'Skærmtid (t)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Dårlig søvn', triggerCaffeine: 'Koffein',
+    triggerAlcohol: 'Alkohol', triggerScreenOverload: 'For meget skærm',
+    triggerNoExercise: 'Ingen motion', triggerSkippedMed: 'Glemte medicin',
+    triggerNoise: 'Støj', triggerSocialOverload: 'For meget socialt', triggerDiet: 'Kost',
+
     scores: {
       mood: ['Meget godt','Godt','OK','Dårligt','Meget dårligt'],
       focus: ['Fremragende','Godt','OK','Distraheret','Kan ikke fokusere'],
@@ -319,6 +427,16 @@ const LANG_MAP = {
       impulsivity: ['Meget rolig','Rolig','Nogle impulser','Impulsiv','Meget impulsiv'],
     },
     scoreBest: '1 = Bedst', scoreWorst: '5 = Værst',
+
+    calendar: 'Kalender',
+    diary: 'Dagbok', monthSummary: 'Månedsoversigt',
+    daysLoggedShort: 'Dage logget', avgScore: 'Gns. score', missing: 'Mangler',
+    scoreBreakdown: 'Scorefordeling',
+    scoreVeryLow: 'Meget lav', scoreLow: 'Lav', scoreModerate: 'Middel',
+    scoreGood: 'Godt', scoreExcellent: 'Fremragende',
+    months: ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'],
+    weekdays: ['Man','Tir','Ons','Tor','Fre','Lør','Søn'],
+
     history: 'Historik', noLogs: 'Ingen logger endnu',
     settings: 'Indstillinger', chooseGender: 'Vælg køn',
     female: 'Kvinde', male: 'Mand', undefined: 'Udefineret',
@@ -365,6 +483,17 @@ const LANG_MAP = {
     tasksCompleted: 'Erledigte Aufgaben', screenTime: 'Bildschirmzeit',
     tookMedToday: 'Heute Medikamente genommen', howWasYourDay: 'Wie war Ihr Tag?',
     saveLog: 'Protokoll speichern', save: 'Speichern', cancel: 'Abbrechen', errorSave: 'Speichern fehlgeschlagen',
+
+    logDay: 'Tag protokollieren', missingFields: 'Fehlende Felder',
+    missingFieldsMsg: 'Bitte bewerten Sie Stimmung, Fokus, Schlaf, Energie und Impulsivität vor dem Speichern.',
+    medicationTaken: 'Medikamente genommen', medicationNotes: 'Notizen zu Medikamenten…',
+    triggers: 'Auslöser', writeAboutDay: 'Schreiben Sie etwas über Ihren Tag…',
+    activity: 'Aktivität', screenTimeH: 'Bildschirmzeit (h)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Schlechter Schlaf', triggerCaffeine: 'Koffein',
+    triggerAlcohol: 'Alkohol', triggerScreenOverload: 'Zu viel Bildschirm',
+    triggerNoExercise: 'Kein Sport', triggerSkippedMed: 'Medikament vergessen',
+    triggerNoise: 'Lärm', triggerSocialOverload: 'Zu viel Soziales', triggerDiet: 'Ernährung',
+
     scores: {
       mood: ['Sehr gut','Gut','OK','Schlecht','Sehr schlecht'],
       focus: ['Ausgezeichnet','Gut','OK','Abgelenkt','Kann mich nicht konzentrieren'],
@@ -373,6 +502,16 @@ const LANG_MAP = {
       impulsivity: ['Sehr ruhig','Ruhig','Etwas impulsiv','Impulsiv','Sehr impulsiv'],
     },
     scoreBest: '1 = Beste', scoreWorst: '5 = Schlechteste',
+
+    calendar: 'Kalender',
+    diary: 'Dagbok', monthSummary: 'Monatsübersicht',
+    daysLoggedShort: 'Tage protokolliert', avgScore: 'Ø Punkte', missing: 'Fehlend',
+    scoreBreakdown: 'Punkteverteilung',
+    scoreVeryLow: 'Sehr niedrig', scoreLow: 'Niedrig', scoreModerate: 'Mittel',
+    scoreGood: 'Gut', scoreExcellent: 'Ausgezeichnet',
+    months: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+    weekdays: ['Mo','Di','Mi','Do','Fr','Sa','So'],
+
     history: 'Verlauf', noLogs: 'Noch keine Einträge',
     settings: 'Einstellungen', chooseGender: 'Geschlecht wählen',
     female: 'Weiblich', male: 'Männlich', undefined: 'Unbestimmt',
@@ -419,6 +558,17 @@ const LANG_MAP = {
     tasksCompleted: 'Tâches accomplies', screenTime: "Temps d'écran",
     tookMedToday: "Pris des médicaments aujourd'hui", howWasYourDay: 'Comment était votre journée?',
     saveLog: 'Enregistrer', save: 'Enregistrer', cancel: 'Annuler', errorSave: "Échec de l'enregistrement",
+
+    logDay: 'Enregistrer la journée', missingFields: 'Champs manquants',
+    missingFieldsMsg: "Veuillez évaluer l'humeur, le focus, le sommeil, l'énergie et l'impulsivité avant d'enregistrer.",
+    medicationTaken: 'Médicaments pris', medicationNotes: 'Notes sur les médicaments…',
+    triggers: 'Déclencheurs', writeAboutDay: 'Écrivez quelque chose sur votre journée…',
+    activity: 'Activité', screenTimeH: "Temps d'écran (h)",
+    triggerStress: 'Stress', triggerPoorSleep: 'Mauvais sommeil', triggerCaffeine: 'Caféine',
+    triggerAlcohol: 'Alcool', triggerScreenOverload: 'Trop de temps d\'écran',
+    triggerNoExercise: 'Pas d\'exercice', triggerSkippedMed: 'Médicament oublié',
+    triggerNoise: 'Bruit', triggerSocialOverload: 'Surcharge sociale', triggerDiet: 'Alimentation',
+
     scores: {
       mood: ['Très bien','Bien','OK','Mal','Très mal'],
       focus: ['Excellent','Bien','OK','Distrait','Impossible de se concentrer'],
@@ -427,6 +577,15 @@ const LANG_MAP = {
       impulsivity: ['Très calme','Calme','Quelques impulsions','Impulsif','Très impulsif'],
     },
     scoreBest: '1 = Meilleur', scoreWorst: '5 = Pire',
+
+    calendar: 'Calendrier', diary: 'Journal', monthSummary: 'Résumé du mois',
+    daysLoggedShort: 'Jours enregistrés', avgScore: 'Score moy.', missing: 'Manquants',
+    scoreBreakdown: 'Répartition des scores',
+    scoreVeryLow: 'Très bas', scoreLow: 'Bas', scoreModerate: 'Modéré',
+    scoreGood: 'Bien', scoreExcellent: 'Excellent',
+    months: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+    weekdays: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+
     history: 'Historique', noLogs: 'Aucune entrée',
     settings: 'Paramètres', chooseGender: 'Choisir le genre',
     female: 'Femme', male: 'Homme', undefined: 'Non défini',
@@ -440,6 +599,7 @@ const LANG_MAP = {
     saveChanges: 'Enregistrer les modifications?', unsavedChanges: 'Vous avez des modifications non enregistrées.',
     discard: 'Ignorer', languageTitle: 'Choix de la langue',
   },
+
   pt: {
     appName: 'FocusApp', tagline: 'Rastreador Diário TDAH',
     last30days: 'Últimos 30 dias', daysLogged: 'Dias registados',
@@ -472,6 +632,17 @@ const LANG_MAP = {
     tasksCompleted: 'Tarefas concluídas', screenTime: 'Tempo de ecrã',
     tookMedToday: 'Tomou medicação hoje', howWasYourDay: 'Como foi o seu dia?',
     saveLog: 'Guardar registo', save: 'Guardar', cancel: 'Cancelar', errorSave: 'Falha ao guardar',
+
+    logDay: 'Registar dia', missingFields: 'Campos em falta',
+    missingFieldsMsg: 'Por favor avalie humor, foco, sono, energia e impulsividade antes de guardar.',
+    medicationTaken: 'Tomou medicação', medicationNotes: 'Notas sobre medicação…',
+    triggers: 'Gatilhos', writeAboutDay: 'Escreva algo sobre o seu dia…',
+    activity: 'Atividade', screenTimeH: 'Tempo de ecrã (h)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Sono mau', triggerCaffeine: 'Cafeína',
+    triggerAlcohol: 'Álcool', triggerScreenOverload: 'Demasiado ecrã',
+    triggerNoExercise: 'Sem exercício', triggerSkippedMed: 'Esqueceu medicação',
+    triggerNoise: 'Ruído', triggerSocialOverload: 'Sobrecarga social', triggerDiet: 'Dieta',
+
     scores: {
       mood: ['Muito bom','Bom','OK','Mau','Muito mau'],
       focus: ['Excelente','Bom','OK','Distraído','Não consigo concentrar'],
@@ -480,6 +651,15 @@ const LANG_MAP = {
       impulsivity: ['Muito calmo','Calmo','Alguns impulsos','Impulsivo','Muito impulsivo'],
     },
     scoreBest: '1 = Melhor', scoreWorst: '5 = Pior',
+
+    calendar: 'Calendário', diary: 'Diário', monthSummary: 'Resumo do mês',
+    daysLoggedShort: 'Dias registados', avgScore: 'Pontuação média', missing: 'Em falta',
+    scoreBreakdown: 'Distribuição de pontuações',
+    scoreVeryLow: 'Muito baixo', scoreLow: 'Baixo', scoreModerate: 'Moderado',
+    scoreGood: 'Bom', scoreExcellent: 'Excelente',
+    months: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+    weekdays: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+
     history: 'Histórico', noLogs: 'Sem registos',
     settings: 'Definições', chooseGender: 'Escolha o género',
     female: 'Feminino', male: 'Masculino', undefined: 'Não definido',
@@ -493,6 +673,7 @@ const LANG_MAP = {
     saveChanges: 'Guardar alterações?', unsavedChanges: 'Tem alterações não guardadas.',
     discard: 'Descartar', languageTitle: 'Idioma',
   },
+
   nl: {
     appName: 'FocusApp', tagline: 'ADHD Dagelijkse Tracker',
     last30days: 'Laatste 30 dagen', daysLogged: 'Dagen gelogd',
@@ -525,6 +706,17 @@ const LANG_MAP = {
     tasksCompleted: 'Voltooide taken', screenTime: 'Schermtijd',
     tookMedToday: 'Vandaag medicatie genomen', howWasYourDay: 'Hoe was uw dag?',
     saveLog: 'Log opslaan', save: 'Opslaan', cancel: 'Annuleren', errorSave: 'Opslaan mislukt',
+
+    logDay: 'Dag loggen', missingFields: 'Ontbrekende velden',
+    missingFieldsMsg: 'Beoordeel stemming, focus, slaap, energie en impulsiviteit voor het opslaan.',
+    medicationTaken: 'Medicatie genomen', medicationNotes: 'Notities over medicatie…',
+    triggers: 'Triggers', writeAboutDay: 'Schrijf iets over uw dag…',
+    activity: 'Activiteit', screenTimeH: 'Schermtijd (u)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Slechte slaap', triggerCaffeine: 'Cafeïne',
+    triggerAlcohol: 'Alcohol', triggerScreenOverload: 'Te veel schermtijd',
+    triggerNoExercise: 'Geen beweging', triggerSkippedMed: 'Medicatie vergeten',
+    triggerNoise: 'Lawaai', triggerSocialOverload: 'Sociale overbelasting', triggerDiet: 'Dieet',
+
     scores: {
       mood: ['Zeer goed','Goed','OK','Slecht','Zeer slecht'],
       focus: ['Uitstekend','Goed','OK','Afgeleid','Kan niet focussen'],
@@ -533,6 +725,16 @@ const LANG_MAP = {
       impulsivity: ['Zeer rustig','Rustig','Wat impulsen','Impulsief','Zeer impulsief'],
     },
     scoreBest: '1 = Beste', scoreWorst: '5 = Slechtste',
+
+    calendar: 'Kalender',
+    diary: 'Dagbok', monthSummary: 'Maandoverzicht',
+    daysLoggedShort: 'Dagen gelogd', avgScore: 'Gem. score', missing: 'Ontbreekt',
+    scoreBreakdown: 'Scoreverdeling',
+    scoreVeryLow: 'Zeer laag', scoreLow: 'Laag', scoreModerate: 'Gemiddeld',
+    scoreGood: 'Goed', scoreExcellent: 'Uitstekend',
+    months: ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'],
+    weekdays: ['Ma','Di','Wo','Do','Vr','Za','Zo'],
+
     history: 'Geschiedenis', noLogs: 'Nog geen logs',
     settings: 'Instellingen', chooseGender: 'Kies geslacht',
     female: 'Vrouw', male: 'Man', undefined: 'Ongedefinieerd',
@@ -546,6 +748,7 @@ const LANG_MAP = {
     saveChanges: 'Wijzigingen opslaan?', unsavedChanges: 'U heeft niet-opgeslagen wijzigingen.',
     discard: 'Verwijderen', languageTitle: 'Taal',
   },
+
   it: {
     appName: 'FocusApp', tagline: 'Tracker quotidiano ADHD',
     last30days: 'Ultimi 30 giorni', daysLogged: 'Giorni registrati',
@@ -578,6 +781,17 @@ const LANG_MAP = {
     tasksCompleted: 'Attività completate', screenTime: 'Tempo schermo',
     tookMedToday: 'Farmaci presi oggi', howWasYourDay: 'Come è stata la tua giornata?',
     saveLog: 'Salva registro', save: 'Salva', cancel: 'Annulla', errorSave: 'Salvataggio fallito',
+
+    logDay: 'Registra giorno', missingFields: 'Campi mancanti',
+    missingFieldsMsg: 'Valuta umore, focus, sonno, energia e impulsività prima di salvare.',
+    medicationTaken: 'Farmaci presi', medicationNotes: 'Note sui farmaci…',
+    triggers: 'Fattori scatenanti', writeAboutDay: 'Scrivi qualcosa sulla tua giornata…',
+    activity: 'Attività', screenTimeH: 'Tempo schermo (h)',
+    triggerStress: 'Stress', triggerPoorSleep: 'Sonno scarso', triggerCaffeine: 'Caffeina',
+    triggerAlcohol: 'Alcol', triggerScreenOverload: 'Troppo schermo',
+    triggerNoExercise: 'Nessun esercizio', triggerSkippedMed: 'Farmaco dimenticato',
+    triggerNoise: 'Rumore', triggerSocialOverload: 'Sovraccarico sociale', triggerDiet: 'Alimentazione',
+
     scores: {
       mood: ['Molto bene','Bene','OK','Male','Molto male'],
       focus: ['Eccellente','Bene','OK','Distratto','Non riesco a concentrarmi'],
@@ -586,6 +800,15 @@ const LANG_MAP = {
       impulsivity: ['Molto calmo','Calmo','Alcuni impulsi','Impulsivo','Molto impulsivo'],
     },
     scoreBest: '1 = Migliore', scoreWorst: '5 = Peggiore',
+
+    calendar: 'Calendario', diary: 'Diario', monthSummary: 'Riepilogo mensile',
+    daysLoggedShort: 'Giorni registrati', avgScore: 'Punteggio medio', missing: 'Mancanti',
+    scoreBreakdown: 'Distribuzione punteggi',
+    scoreVeryLow: 'Molto basso', scoreLow: 'Basso', scoreModerate: 'Moderato',
+    scoreGood: 'Buono', scoreExcellent: 'Eccellente',
+    months: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+    weekdays: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
+
     history: 'Cronologia', noLogs: 'Nessun registro',
     settings: 'Impostazioni', chooseGender: 'Scegli genere',
     female: 'Femmina', male: 'Maschio', undefined: 'Non definito',
@@ -599,6 +822,7 @@ const LANG_MAP = {
     saveChanges: 'Salvare le modifiche?', unsavedChanges: 'Hai modifiche non salvate.',
     discard: 'Scarta', languageTitle: 'Lingua',
   },
+
   es: {
     appName: 'FocusApp', tagline: 'Rastreador Diario TDAH',
     last30days: 'Últimos 30 días', daysLogged: 'Días registrados',
@@ -631,6 +855,17 @@ const LANG_MAP = {
     tasksCompleted: 'Tareas completadas', screenTime: 'Tiempo de pantalla',
     tookMedToday: 'Tomé medicación hoy', howWasYourDay: '¿Cómo fue tu día?',
     saveLog: 'Guardar registro', save: 'Guardar', cancel: 'Cancelar', errorSave: 'Error al guardar',
+
+    logDay: 'Registrar día', missingFields: 'Campos faltantes',
+    missingFieldsMsg: 'Por favor valora el estado de ánimo, enfoque, sueño, energía e impulsividad antes de guardar.',
+    medicationTaken: 'Medicación tomada', medicationNotes: 'Notas sobre medicación…',
+    triggers: 'Desencadenantes', writeAboutDay: 'Escribe algo sobre tu día…',
+    activity: 'Actividad', screenTimeH: 'Tiempo de pantalla (h)',
+    triggerStress: 'Estrés', triggerPoorSleep: 'Sueño malo', triggerCaffeine: 'Cafeína',
+    triggerAlcohol: 'Alcohol', triggerScreenOverload: 'Demasiada pantalla',
+    triggerNoExercise: 'Sin ejercicio', triggerSkippedMed: 'Olvidé la medicación',
+    triggerNoise: 'Ruido', triggerSocialOverload: 'Sobrecarga social', triggerDiet: 'Dieta',
+
     scores: {
       mood: ['Muy bien','Bien','OK','Mal','Muy mal'],
       focus: ['Excelente','Bien','OK','Distraído','No puedo concentrarme'],
@@ -639,6 +874,15 @@ const LANG_MAP = {
       impulsivity: ['Muy calmado','Calmado','Algunos impulsos','Impulsivo','Muy impulsivo'],
     },
     scoreBest: '1 = Mejor', scoreWorst: '5 = Peor',
+
+    calendar: 'Calendario', diary: 'Diario', monthSummary: 'Resumen del mes',
+    daysLoggedShort: 'Días registrados', avgScore: 'Puntuación media', missing: 'Faltantes',
+    scoreBreakdown: 'Distribución de puntuaciones',
+    scoreVeryLow: 'Muy bajo', scoreLow: 'Bajo', scoreModerate: 'Moderado',
+    scoreGood: 'Bueno', scoreExcellent: 'Excelente',
+    months: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+    weekdays: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+
     history: 'Historial', noLogs: 'Sin registros',
     settings: 'Ajustes', chooseGender: 'Elegir género',
     female: 'Femenino', male: 'Masculino', undefined: 'No definido',
@@ -652,6 +896,7 @@ const LANG_MAP = {
     saveChanges: '¿Guardar cambios?', unsavedChanges: 'Tienes cambios sin guardar.',
     discard: 'Descartar', languageTitle: 'Idioma',
   },
+
   fi: {
     appName: 'FocusApp', tagline: 'ADHD Päivittäinen Seuranta',
     last30days: 'Viimeiset 30 päivää', daysLogged: 'Päiviä kirjattu',
@@ -684,6 +929,17 @@ const LANG_MAP = {
     tasksCompleted: 'Suoritetut tehtävät', screenTime: 'Ruutuaika',
     tookMedToday: 'Otin lääkkeen tänään', howWasYourDay: 'Miten päiväsi meni?',
     saveLog: 'Tallenna kirjaus', save: 'Tallenna', cancel: 'Peruuta', errorSave: 'Tallennus epäonnistui',
+
+    logDay: 'Kirjaa päivä', missingFields: 'Puuttuvat kentät',
+    missingFieldsMsg: 'Arvioi mieliala, fokus, uni, energia ja impulsiivisuus ennen tallentamista.',
+    medicationTaken: 'Otin lääkkeen', medicationNotes: 'Muistiinpanoja lääkityksestä…',
+    triggers: 'Laukaisijat', writeAboutDay: 'Kirjoita jotain päivästäsi…',
+    activity: 'Aktiviteetti', screenTimeH: 'Ruutuaika (h)',
+    triggerStress: 'Stressi', triggerPoorSleep: 'Huono uni', triggerCaffeine: 'Kofeiini',
+    triggerAlcohol: 'Alkoholi', triggerScreenOverload: 'Liikaa ruutuaikaa',
+    triggerNoExercise: 'Ei liikuntaa', triggerSkippedMed: 'Lääke unohtunut',
+    triggerNoise: 'Melu', triggerSocialOverload: 'Sosiaalinen ylikuormitus', triggerDiet: 'Ruokavalio',
+
     scores: {
       mood: ['Erittäin hyvä','Hyvä','OK','Huono','Erittäin huono'],
       focus: ['Erinomainen','Hyvä','OK','Häiriintynyt','En pysty keskittymään'],
@@ -692,6 +948,15 @@ const LANG_MAP = {
       impulsivity: ['Erittäin rauhallinen','Rauhallinen','Joitain impulsseja','Impulsiivinen','Erittäin impulsiivinen'],
     },
     scoreBest: '1 = Paras', scoreWorst: '5 = Huonoin',
+
+    calendar: 'Kalenteri', diary: 'Päiväkirja', monthSummary: 'Kuukauden yhteenveto',
+    daysLoggedShort: 'Päiviä kirjattu', avgScore: 'Keskim. pisteet', missing: 'Puuttuu',
+    scoreBreakdown: 'Pisteiden jakauma',
+    scoreVeryLow: 'Erittäin matala', scoreLow: 'Matala', scoreModerate: 'Kohtalainen',
+    scoreGood: 'Hyvä', scoreExcellent: 'Erinomainen',
+    months: ['Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu','Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'],
+    weekdays: ['Ma','Ti','Ke','To','Pe','La','Su'],
+
     history: 'Historia', noLogs: 'Ei kirjauksia',
     settings: 'Asetukset', chooseGender: 'Valitse sukupuoli',
     female: 'Nainen', male: 'Mies', undefined: 'Määrittelemätön',
@@ -713,7 +978,6 @@ export function getTranslations(lang) {
   return { ...base, ...selected };
 }
 
-// Safe getter — never throws, returns key name as fallback
 export function safeT(lang, key) {
   const translations = getTranslations(lang);
   return translations[key] ?? key;
