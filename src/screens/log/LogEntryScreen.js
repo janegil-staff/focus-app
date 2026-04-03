@@ -1,215 +1,709 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, TextInput, Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLogs } from '../../context/LogsContext';
-import { ScoreRow, PrimaryButton } from '../../components';
-import { Colors, Spacing, FontSize, Radius } from '../../theme';
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  Switch,
+  Dimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLogs } from "../../context/LogsContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useLang } from "../../context/LangContext";
+import { useAuth } from "../../context/AuthContext";
+import { FontSize, Spacing, Radius } from "../../theme";
 
-export default function LogEntryScreen({ route, navigation }) {
-  const { date, log: existing } = route.params ?? {};
-  const { saveLog } = useLogs();
+const { width } = Dimensions.get("window");
 
-  const [mood,        setMood]        = useState(existing?.mood        ?? 3);
-  const [focus,       setFocus]       = useState(existing?.focus       ?? 3);
-  const [sleep,       setSleep]       = useState(existing?.sleep       ?? 3);
-  const [energy,      setEnergy]      = useState(existing?.energy      ?? 3);
-  const [impulsivity, setImpulsivity] = useState(existing?.impulsivity ?? 3);
-  const [tasks,       setTasks]       = useState(existing?.tasksCompleted   ?? 0);
-  const [screenTime,  setScreenTime]  = useState(existing?.screenTimeHours  ?? 0);
-  const [medTaken,    setMedTaken]    = useState(existing?.medicationTaken  ?? false);
-  const [note,        setNote]        = useState(existing?.note ?? '');
-  const [loading,     setLoading]     = useState(false);
+// ── Score colors: 1=best(green) → 5=worst(red) ────────────────────────────────
+const SCORE_COLORS = {
+  1: "#22C55E",
+  2: "#7AABDB",
+  3: "#FBBF24",
+  4: "#FB923C",
+  5: "#EF4444",
+};
 
-  const save = async () => {
-    setLoading(true);
-    try {
-      await saveLog({
-        date,
-        mood, focus, sleep, energy, impulsivity,
-        tasksCompleted: tasks,
-        screenTimeHours: screenTime,
-        medicationTaken: medTaken,
-        note: note.trim() || undefined,
-      });
-      navigation.goBack();
-    } catch {
-      Alert.alert('Error', 'Failed to save log');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancel}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>{date}</Text>
-        <TouchableOpacity onPress={save} disabled={loading}>
-          <Text style={[styles.save, loading && { opacity: 0.5 }]}>Save</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Section title="How did you feel?">
-          <ScoreRow label="Mood"   value={mood}   onChange={setMood}   labels={['Very low','Low','Okay','Good','Great']} />
-          <ScoreRow label="Energy" value={energy} onChange={setEnergy} labels={['Exhausted','Tired','Okay','Energetic','Pumped']} />
-        </Section>
-
-        <Section title="ADHD symptoms">
-          <ScoreRow label="Focus"       value={focus}       onChange={setFocus}       labels={["Can't focus",'Distracted','Okay','Focused','In the zone']} />
-          <ScoreRow label="Impulsivity" value={impulsivity} onChange={setImpulsivity} labels={['Very calm','Calm','Some urges','Impulsive','Very impulsive']} />
-        </Section>
-
-        <Section title="Sleep & tasks">
-          <ScoreRow label="Sleep quality" value={sleep} onChange={setSleep} labels={['Terrible','Poor','Okay','Good','Great']} />
-
-          <View style={styles.counterRow}>
-            <Text style={styles.counterLabel}>Tasks completed</Text>
-            <View style={styles.counter}>
-              <TouchableOpacity
-                style={styles.counterBtn}
-                onPress={() => setTasks(Math.max(0, tasks - 1))}
-              >
-                <Text style={styles.counterBtnText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.counterValue}>{tasks}</Text>
-              <TouchableOpacity
-                style={styles.counterBtn}
-                onPress={() => setTasks(Math.min(20, tasks + 1))}
-              >
-                <Text style={styles.counterBtnText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.counterRow}>
-            <Text style={styles.counterLabel}>Screen time</Text>
-            <View style={styles.counter}>
-              <TouchableOpacity
-                style={styles.counterBtn}
-                onPress={() => setScreenTime(Math.max(0, +(screenTime - 0.5).toFixed(1)))}
-              >
-                <Text style={styles.counterBtnText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.counterValue}>{screenTime}h</Text>
-              <TouchableOpacity
-                style={styles.counterBtn}
-                onPress={() => setScreenTime(Math.min(16, +(screenTime + 0.5).toFixed(1)))}
-              >
-                <Text style={styles.counterBtnText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Section>
-
-        <Section title="Medication">
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Took medication today</Text>
-            <Switch
-              value={medTaken}
-              onValueChange={setMedTaken}
-              trackColor={{ true: Colors.accent }}
-              thumbColor={Colors.white}
-            />
-          </View>
-        </Section>
-
-        <Section title="Notes">
-          <TextInput
-            style={styles.noteInput}
-            value={note}
-            onChangeText={setNote}
-            placeholder="How was your day?"
-            placeholderTextColor={Colors.textMuted}
-            multiline
-            numberOfLines={4}
-          />
-        </Section>
-
-        <View style={{ height: Spacing.lg }}>
-          <PrimaryButton label="Save log" onPress={save} loading={loading} />
-        </View>
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
-  );
+function scoreColor(score) {
+  return SCORE_COLORS[score] ?? "#D1D5DB";
 }
 
-function Section({ title, children }) {
+// ── Score picker row ───────────────────────────────────────────────────────────
+function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
-      {children}
+    <View style={sr.wrap}>
+      <View style={sr.top}>
+        <Text style={[sr.label, { color: theme.text }]}>{label}</Text>
+        {value ? (
+          <Text style={[sr.badge, { backgroundColor: scoreColor(value) }]}>
+            {labels ? labels[value - 1] : value}
+          </Text>
+        ) : null}
+      </View>
+      {subtitle ? (
+        <Text style={[sr.sub, { color: theme.textSecondary }]}>{subtitle}</Text>
+      ) : null}
+      <View style={sr.dots}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <TouchableOpacity
+            key={n}
+            onPress={() => onChange(value === n ? null : n)}
+            style={[
+              sr.dot,
+              {
+                backgroundColor:
+                  value === n
+                    ? scoreColor(n)
+                    : (theme.bgSecondary ?? "#F0F4F8"),
+              },
+              { borderColor: value === n ? scoreColor(n) : theme.border },
+            ]}
+          >
+            <Text
+              style={[
+                sr.dotNum,
+                { color: value === n ? "#FFF" : theme.textMuted },
+              ]}
+            >
+              {n}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+const sr = StyleSheet.create({
+  wrap: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
-  cancel: { color: Colors.textMuted, fontSize: FontSize.md },
-  title:  { color: Colors.text,      fontSize: FontSize.md, fontWeight: '600' },
-  save:   { color: Colors.accent,    fontSize: FontSize.md, fontWeight: '600' },
-  scroll: { flex: 1 },
-  scrollContent: { padding: Spacing.lg, gap: Spacing.md },
-  section: {
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
+  top: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
   },
-  sectionTitle: {
-    color: Colors.textMuted,
+  label: { fontSize: FontSize.md, fontWeight: "500", flex: 1 },
+  badge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    color: "#FFF",
     fontSize: FontSize.xs,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    marginBottom: Spacing.lg,
+    fontWeight: "700",
+    overflow: "hidden",
   },
-  counterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: Spacing.md,
+  sub: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  dots: { flexDirection: "row", gap: 8, marginTop: Spacing.sm },
+  dot: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  counterLabel: { color: Colors.text, fontSize: FontSize.md, fontWeight: '500' },
-  counter: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  counterBtn: {
-    width: 32, height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surfaceDim,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  counterBtnText: { color: Colors.accent, fontSize: FontSize.lg, fontWeight: '300' },
-  counterValue: { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', minWidth: 40, textAlign: 'center' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  switchLabel: { color: Colors.text, fontSize: FontSize.md },
-  noteInput: {
-    color: Colors.text,
-    fontSize: FontSize.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    backgroundColor: Colors.surface,
-  },
+  dotNum: { fontSize: FontSize.sm, fontWeight: "600" },
 });
+
+// ── Section header ─────────────────────────────────────────────────────────────
+function SectionHeader({ title, theme }) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.lg,
+        paddingBottom: Spacing.sm,
+        backgroundColor: theme.bgSecondary ?? "#F0F4F8",
+      }}
+    >
+      <Text
+        style={{
+          color: theme.textMuted,
+          fontSize: FontSize.sm,
+          fontWeight: "700",
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+// ── Numeric input row ──────────────────────────────────────────────────────────
+function NumericRow({ label, subtitle, value, onChange, unit, theme }) {
+  return (
+    <View style={[sr.wrap, { flexDirection: "row", alignItems: "center" }]}>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            color: theme.text,
+            fontSize: FontSize.md,
+            fontWeight: "500",
+          }}
+        >
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: FontSize.xs,
+              marginTop: 2,
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          keyboardType="numeric"
+          style={{
+            width: 56,
+            height: 36,
+            borderRadius: 8,
+            borderWidth: 1.5,
+            borderColor: theme.border,
+            color: theme.text,
+            fontSize: FontSize.md,
+            fontWeight: "600",
+            textAlign: "center",
+            backgroundColor: theme.bg ?? "#FFF",
+          }}
+          placeholderTextColor={theme.textMuted}
+          placeholder="—"
+          selectionColor={theme.accent}
+        />
+        {unit ? (
+          <Text style={{ color: theme.textMuted, fontSize: FontSize.sm }}>
+            {unit}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+// ── Toggle row ─────────────────────────────────────────────────────────────────
+function ToggleRow({ label, subtitle, value, onChange, theme }) {
+  return (
+    <View
+      style={[
+        sr.wrap,
+        {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: Spacing.md,
+        },
+      ]}
+    >
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            color: theme.text,
+            fontSize: FontSize.md,
+            fontWeight: "500",
+          }}
+        >
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: FontSize.xs,
+              marginTop: 2,
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      <Switch
+        value={!!value}
+        onValueChange={onChange}
+        trackColor={{ false: "#D1D5DB", true: "#22C55E" }}
+        thumbColor="#FFFFFF"
+        ios_backgroundColor="#D1D5DB"
+      />
+    </View>
+  );
+}
+
+// ── Main screen ────────────────────────────────────────────────────────────────
+export default function LogEntryScreen({ navigation, route }) {
+  const { date, log: existingLog } = route.params ?? {};
+  const { theme } = useTheme();
+  const { t } = useLang();
+  const { user } = useAuth();
+  const { saveLog } = useLogs();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef(null);
+
+  const isEdit = !!existingLog;
+
+  // ── Field state ──────────────────────────────────────────────────────────────
+  const [mood, setMood] = useState(existingLog?.mood ?? null);
+  const [energy, setEnergy] = useState(existingLog?.energy ?? null);
+  const [focus, setFocus] = useState(existingLog?.focus ?? null);
+  const [impulsivity, setImpulsivity] = useState(
+    existingLog?.impulsivity ?? null,
+  );
+  const [sleep, setSleep] = useState(existingLog?.sleep ?? null);
+  const [tasks, setTasks] = useState(existingLog?.tasksCompleted ?? null);
+  const [screenTime, setScreenTime] = useState(
+    existingLog?.screenTime ? String(existingLog.screenTime) : "",
+  );
+  const [tookMed, setTookMed] = useState(existingLog?.tookMedication ?? false);
+  const [note, setNote] = useState(existingLog?.note ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const medicines = user?.medicines ?? [];
+
+  // Format display date
+  const displayDate = (() => {
+    if (!date) return "";
+    const d = new Date(date);
+    return d.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  })();
+
+  const hasAnyData =
+    mood ||
+    energy ||
+    focus ||
+    impulsivity ||
+    sleep ||
+    tasks ||
+    screenTime ||
+    tookMed ||
+    note;
+
+  const handleSave = async () => {
+    if (!hasAnyData) {
+      Alert.alert("Nothing to save", "Please fill in at least one field.");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Strip null/undefined fields — backend may reject them
+      const payload = { date };
+      if (mood != null) payload.mood = mood;
+      if (energy != null) payload.energy = energy;
+      if (focus != null) payload.focus = focus;
+      if (impulsivity != null) payload.impulsivity = impulsivity;
+      if (sleep != null) payload.sleep = sleep;
+      if (tasks != null) payload.tasksCompleted = tasks;
+      if (screenTime) payload.screenTime = parseFloat(screenTime);
+      payload.tookMedication = tookMed;
+      if (note.trim()) payload.note = note.trim();
+
+      console.log("[LogEntry] saving payload:", JSON.stringify(payload));
+      await saveLog(payload);
+      navigation.goBack();
+    } catch (e) {
+      console.error(
+        "[LogEntry] save error:",
+        e?.response?.data ?? e?.message ?? e,
+      );
+      Alert.alert(
+        t.errorSave ?? "Error",
+        e?.response?.data?.error ??
+          e?.message ??
+          "Could not save log. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert("Delete log", "Are you sure you want to delete this log?", [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteLog(date);
+            navigation.goBack();
+          } catch {
+            Alert.alert("Error", "Could not delete log.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const s = makeStyles(theme, insets);
+
+  const moodLabels = t.scores?.mood ?? [
+    "Very good",
+    "Good",
+    "OK",
+    "Bad",
+    "Very bad",
+  ];
+  const focusLabels = t.scores?.focus ?? [
+    "Excellent",
+    "Good",
+    "OK",
+    "Distracted",
+    "Can't focus",
+  ];
+  const sleepLabels = t.scores?.sleep ?? [
+    "Great",
+    "Good",
+    "OK",
+    "Poor",
+    "Terrible",
+  ];
+  const energyLabels = t.scores?.energy ?? [
+    "Pumped",
+    "Energetic",
+    "OK",
+    "Tired",
+    "Exhausted",
+  ];
+  const impulsivityLabels = t.scores?.impulsivity ?? [
+    "Very calm",
+    "Calm",
+    "Some urges",
+    "Impulsive",
+    "Very impulsive",
+  ];
+
+  return (
+    <View style={s.root}>
+      {/* Header */}
+      <LinearGradient
+        colors={[theme.accent, theme.accentDark ?? "#2D4A6E"]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={s.header}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={s.headerBtn}
+        >
+          <Text style={s.headerBack}>‹</Text>
+        </TouchableOpacity>
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>
+            {isEdit
+              ? (t.editTodayLog ?? "Edit log")
+              : (t.howWasYourDay ?? "How was your day?")}
+          </Text>
+          <Text style={s.headerDate}>{displayDate}</Text>
+        </View>
+        {isEdit ? (
+          <TouchableOpacity onPress={handleDelete} style={s.headerBtn}>
+            <Text style={s.headerDelete}>🗑</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={s.headerBtn} />
+        )}
+      </LinearGradient>
+
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Section 1: How did you feel ── */}
+        <SectionHeader
+          title={t.howDidYouFeel ?? "How did you feel?"}
+          theme={theme}
+        />
+        <View style={s.section}>
+          <ScoreRow
+            label={t.mood ?? "Mood"}
+            value={mood}
+            onChange={setMood}
+            labels={moodLabels}
+            theme={theme}
+          />
+          <ScoreRow
+            label={t.energy ?? "Energy"}
+            value={energy}
+            onChange={setEnergy}
+            labels={energyLabels}
+            theme={theme}
+          />
+        </View>
+
+        {/* ── Section 2: ADHD symptoms ── */}
+        <SectionHeader
+          title={t.adhdSymptoms ?? "ADHD symptoms"}
+          theme={theme}
+        />
+        <View style={s.section}>
+          <ScoreRow
+            label={t.focus ?? "Focus"}
+            subtitle="1 = excellent focus, 5 = cannot focus at all"
+            value={focus}
+            onChange={setFocus}
+            labels={focusLabels}
+            theme={theme}
+          />
+          <ScoreRow
+            label={t.impulsivity ?? "Impulsivity"}
+            subtitle="1 = very calm, 5 = very impulsive"
+            value={impulsivity}
+            onChange={setImpulsivity}
+            labels={impulsivityLabels}
+            theme={theme}
+          />
+        </View>
+
+        {/* ── Section 3: Sleep & tasks ── */}
+        <SectionHeader title={t.sleepTasks ?? "Sleep & tasks"} theme={theme} />
+        <View style={s.section}>
+          <ScoreRow
+            label={t.sleep ?? "Sleep quality"}
+            subtitle="How well did you sleep last night?"
+            value={sleep}
+            onChange={setSleep}
+            labels={sleepLabels}
+            theme={theme}
+          />
+          <ScoreRow
+            label={t.tasksCompleted ?? "Tasks completed"}
+            subtitle="How productive were you today?"
+            value={tasks}
+            onChange={setTasks}
+            labels={["All done", "Most", "Some", "Few", "None"]}
+            theme={theme}
+          />
+          <NumericRow
+            label={t.screenTime ?? "Screen time"}
+            subtitle="Total hours on screens today"
+            value={screenTime}
+            onChange={setScreenTime}
+            unit="hrs"
+            theme={theme}
+          />
+        </View>
+
+        {/* ── Section 4: Medication ── */}
+        <SectionHeader title={t.medicationSec ?? "Medication"} theme={theme} />
+        <View style={s.section}>
+          <ToggleRow
+            label={t.tookMedToday ?? "Took medication today"}
+            value={tookMed}
+            onChange={setTookMed}
+            theme={theme}
+          />
+          {medicines.length > 0 && tookMed && (
+            <View
+              style={{
+                paddingHorizontal: Spacing.lg,
+                paddingBottom: Spacing.md,
+              }}
+            >
+              {medicines.map((med) => (
+                <View
+                  key={med.id}
+                  style={[s.medRow, { borderColor: theme.border }]}
+                >
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: FontSize.sm,
+                      flex: 1,
+                    }}
+                  >
+                    {med.name}
+                  </Text>
+                  {med.atcCode ? (
+                    <Text
+                      style={{ color: theme.textMuted, fontSize: FontSize.xs }}
+                    >
+                      {med.atcCode}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* ── Section 5: Notes ── */}
+        <SectionHeader title={t.notes ?? "Notes"} theme={theme} />
+        <View
+          style={[
+            s.section,
+            { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+          ]}
+        >
+          <TextInput
+            style={[
+              s.noteInput,
+              {
+                color: theme.text,
+                borderColor: theme.border,
+                backgroundColor: theme.bg ?? "#FFF",
+              },
+            ]}
+            value={note}
+            onChangeText={setNote}
+            placeholder={t.howWasYourDay ?? "How was your day?"}
+            placeholderTextColor={theme.textMuted}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            selectionColor={theme.accent}
+          />
+        </View>
+
+        {/* Score legend */}
+        <View style={s.legend}>
+          <Text style={[s.legendText, { color: theme.textMuted }]}>
+            {t.scoreBest ?? "1 = Best"}
+          </Text>
+          <View style={s.legendDots}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <View
+                key={n}
+                style={[s.legendDot, { backgroundColor: scoreColor(n) }]}
+              />
+            ))}
+          </View>
+          <Text style={[s.legendText, { color: theme.textMuted }]}>
+            {t.scoreWorst ?? "5 = Worst"}
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Save button */}
+      <View
+        style={[
+          s.bottomWrap,
+          { paddingBottom: (insets.bottom || 16) + Spacing.md },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={handleSave}
+          activeOpacity={0.88}
+          style={s.saveBtn}
+          disabled={saving}
+        >
+          <LinearGradient
+            colors={[theme.accent, theme.accentDark ?? "#2D4A6E"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={s.saveBtnGradient}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={s.saveBtnText}>{t.saveLog ?? "Save log"}</Text>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const makeStyles = (t, insets) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: t.bgSecondary ?? "#F0F4F8" },
+
+    // Header
+    header: {
+      paddingTop: insets.top + Spacing.sm,
+      paddingBottom: Spacing.lg,
+      paddingHorizontal: Spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    headerBtn: { width: 40 },
+    headerBack: { color: "#FFF", fontSize: 28, lineHeight: 34 },
+    headerDelete: { fontSize: 20, textAlign: "right" },
+    headerCenter: { flex: 1, alignItems: "center" },
+    headerTitle: { color: "#FFF", fontSize: FontSize.lg, fontWeight: "600" },
+    headerDate: {
+      color: "rgba(255,255,255,0.75)",
+      fontSize: FontSize.xs,
+      marginTop: 2,
+    },
+
+    section: { backgroundColor: t.bg ?? "#FFFFFF" },
+
+    medRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+    },
+
+    noteInput: {
+      borderWidth: 1.5,
+      borderRadius: Radius.md,
+      padding: Spacing.md,
+      fontSize: FontSize.md,
+      minHeight: 100,
+      lineHeight: 22,
+    },
+
+    legend: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: Spacing.sm,
+      paddingVertical: Spacing.lg,
+    },
+    legendDots: { flexDirection: "row", gap: 4 },
+    legendDot: { width: 12, height: 12, borderRadius: 6 },
+    legendText: { fontSize: FontSize.xs },
+
+    // Save button
+    bottomWrap: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.md,
+      backgroundColor: t.bg ?? "#FFFFFF",
+      borderTopWidth: 1,
+      borderTopColor: t.border,
+    },
+    saveBtn: {
+      width: "100%",
+      height: 46,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: t.accentLight ?? "#7AABDB",
+      overflow: "hidden",
+    },
+    saveBtnGradient: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    saveBtnText: {
+      color: "#FFF",
+      fontSize: FontSize.md,
+      fontWeight: "800",
+      letterSpacing: 1.5,
+    },
+  });
