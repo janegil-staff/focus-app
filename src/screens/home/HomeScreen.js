@@ -15,7 +15,7 @@ function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const SCORE_COLORS = ['#EF4444', '#FB923C', '#FBBF24', '#60A5FA', '#22C55E'];
+const SCORE_COLORS = ['#EF4444', '#FB923C', '#FBBF24', '#7AABDB', '#22C55E'];
 
 export default function HomeScreen({ navigation }) {
   const { user }   = useAuth();
@@ -44,11 +44,11 @@ export default function HomeScreen({ navigation }) {
   ];
 
   const statRows = [
-    { label: 'Days logged',   value: count,                       color: '#1A56DB' },
+    { label: 'Days logged',   value: count,                          color: theme.accent },
     { label: 'Avg mood',      value: (avgs.mood    ?? 0).toFixed(1), color: '#22C55E' },
-    { label: 'Avg focus',     value: (avgs.focus   ?? 0).toFixed(1), color: '#60A5FA' },
+    { label: 'Avg focus',     value: (avgs.focus   ?? 0).toFixed(1), color: '#7AABDB' },
     { label: 'Avg sleep',     value: (avgs.sleep   ?? 0).toFixed(1), color: '#FBBF24' },
-    { label: 'Medication',    value: `${medAdh}%`,                color: '#FB923C' },
+    { label: 'Medication',    value: `${medAdh}%`,                   color: '#FB923C' },
   ];
 
   return (
@@ -128,7 +128,7 @@ const makeStyles = (t, insets = { top: 44 }) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1A56DB',
+    backgroundColor: t.accent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     paddingTop: insets.top + Spacing.md,
@@ -207,7 +207,7 @@ const makeStyles = (t, insets = { top: 44 }) => StyleSheet.create({
   },
   gridIcon:  { fontSize: 36, marginBottom: Spacing.md },
   gridLabel: {
-    color: '#1A56DB',
+    color: t.accent,
     fontSize: FontSize.sm,
     fontWeight: '700',
     letterSpacing: 1,
@@ -226,11 +226,11 @@ const makeStyles = (t, insets = { top: 44 }) => StyleSheet.create({
   dailyLogBtn: {
     width: '100%',
     height: 56,
-    backgroundColor: '#1A56DB',
+    backgroundColor: t.accent,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#1A56DB',
+    shadowColor: t.accent,
     shadowOpacity: 0.35,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },

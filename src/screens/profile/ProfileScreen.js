@@ -19,13 +19,10 @@ const LANGUAGES = [
   { code: 'fr', label: 'French',    flag: '🇫🇷' },
 ];
 
-// SVG-style gender icons as simple RN shapes
 function FemaleIcon({ color }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
-      {/* Head */}
       <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2.5, borderColor: color, marginBottom: 2 }} />
-      {/* Body — dress shape */}
       <View style={{ width: 28, height: 16, borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 2.5, borderColor: color, borderBottomWidth: 0 }} />
       <View style={{ width: 36, height: 8, borderBottomLeftRadius: 10, borderBottomRightRadius: 10, borderWidth: 2.5, borderColor: color, borderTopWidth: 0, marginTop: -1 }} />
     </View>
@@ -35,9 +32,7 @@ function FemaleIcon({ color }) {
 function MaleIcon({ color }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
-      {/* Head */}
       <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2.5, borderColor: color, marginBottom: 2 }} />
-      {/* Body — rectangle */}
       <View style={{ width: 28, height: 20, borderRadius: 4, borderWidth: 2.5, borderColor: color }} />
     </View>
   );
@@ -78,17 +73,11 @@ export default function ProfileScreen({ navigation }) {
     try {
       const body = {};
       if (ageVal) body.age = parseInt(ageVal);
-      // Only send gender if it's a real value (not 'undefined')
       if (gender && gender !== 'undefined') body.gender = gender;
 
       const res = await api.put('/api/patient/profile', body);
       if (res.data?.data) {
         updateUser(res.data.data);
-      }
-      // Update local user state
-      if (res.data?.data) {
-        // AuthContext doesn't have an updateUser method yet,
-        // so we just show success
       }
       Alert.alert('Saved', 'Your profile has been updated.');
     } catch (e) {
@@ -137,7 +126,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <View style={s.root}>
-      {/* Blue header */}
+      {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={handleBack} style={s.headerBtn}>
           <Text style={s.headerBack}>‹</Text>
@@ -156,7 +145,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={s.genderRow}>
             {GENDERS.map(({ value, label, Icon }) => {
               const selected = gender === value;
-              const iconColor = selected ? '#FFFFFF' : '#1A56DB';
+              const iconColor = selected ? '#FFFFFF' : theme.accent;
               return (
                 <TouchableOpacity key={value} style={s.genderItem} onPress={() => setGender(value)}>
                   <View style={[s.genderCircle, selected && s.genderCircleActive]}>
@@ -182,7 +171,7 @@ export default function ProfileScreen({ navigation }) {
               keyboardType="number-pad"
               placeholder="—"
               placeholderTextColor={theme.textMuted}
-              selectionColor="#1A56DB"
+              selectionColor={theme.accent}
             />
           </View>
           <View style={s.fieldLineFull} />
@@ -204,12 +193,12 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Settings rows */}
         <View style={s.section}>
-          <Row label="Personal settings" value="Change" onPress={() => {}}         theme={theme} />
-          <Row label="Appearance"        value={themeLabel} onPress={cycleTheme}   theme={theme} />
-          <Row label="Language"          value={`${lang.flag} ${lang.label}`} onPress={() => {}} theme={theme} />
-          <Row label="PIN"               value="Change" onPress={() => navigation.navigate('PinSetup')} theme={theme} />
-          <Row label="Terms and Conditions" value="View" onPress={() => {}}        theme={theme} />
-          <Row label="About"             value="Read More" onPress={() => {}}      theme={theme} last />
+          <Row label="Personal settings"    value="Change"           onPress={() => {}}                                theme={theme} />
+          <Row label="Appearance"           value={themeLabel}       onPress={cycleTheme}                              theme={theme} />
+          <Row label="Language"             value={`${lang.flag} ${lang.label}`} onPress={() => {}}                   theme={theme} />
+          <Row label="PIN"                  value="Change"           onPress={() => navigation.navigate('PinSetup')}   theme={theme} />
+          <Row label="Terms and Conditions" value="View"             onPress={() => {}}                                theme={theme} />
+          <Row label="About"                value="Read More"        onPress={() => {}}                                theme={theme} last />
         </View>
 
         <View style={s.gap} />
@@ -254,7 +243,7 @@ const makeStyles = (t, insets) => StyleSheet.create({
   root: { flex: 1, backgroundColor: t.bgSecondary },
 
   header: {
-    backgroundColor: '#1A56DB',
+    backgroundColor: t.accent,
     paddingTop: insets.top + Spacing.sm,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.lg,
@@ -285,7 +274,7 @@ const makeStyles = (t, insets) => StyleSheet.create({
     backgroundColor: t.accentBg,
     justifyContent: 'center', alignItems: 'center',
   },
-  genderCircleActive: { backgroundColor: '#1A56DB' },
+  genderCircleActive: { backgroundColor: t.accent },
   genderLabel:        { color: t.textSecondary, fontSize: FontSize.md },
   genderLabelActive:  { color: t.text, fontWeight: '700' },
 
@@ -312,6 +301,6 @@ const makeStyles = (t, insets) => StyleSheet.create({
   fieldChange: { color: t.textMuted, fontSize: FontSize.md },
 
   signOutRow: { paddingVertical: 15, paddingHorizontal: 20 },
-  signOutText:{ color: '#1A56DB', fontSize: FontSize.md, fontWeight: '500' },
+  signOutText:{ color: t.accent, fontSize: FontSize.md, fontWeight: '500' },
   clearText:  { color: '#EF4444', fontSize: FontSize.md },
 });

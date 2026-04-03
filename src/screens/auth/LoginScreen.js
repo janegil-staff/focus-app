@@ -39,7 +39,7 @@ export default function LoginScreen({ navigation }) {
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
           <View style={s.header}>
             <Image
-              source={require('../../../assets/images/focus_logo.png')}
+              source={require('../../../assets/images/focus_logo.jpg')}
               style={s.logo}
               resizeMode="contain"
             />

@@ -81,7 +81,7 @@ console.log( parseInt(age));
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Image
-              source={require('../../../assets/images/focus_logo.png')}
+              source={require('../../../assets/images/focus_logo.jpg')}
               style={styles.logo}
               resizeMode="contain"
             />

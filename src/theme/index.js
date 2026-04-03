@@ -1,20 +1,24 @@
 export const Colors = {
-  accent:       '#1A56DB',
-  accentDark:   '#1344B0',
-  accentLight:  '#60A5FA',
-  accentBg:     '#D6E4FF',
-  accentBorder: '#1A56DB33',
+  accent:       '#4A7AB5',
+  accentDark:   '#2D4A6E',
+  accentLight:  '#7AABDB',
+  accentBg:     '#D6E8F7',
+  accentBorder: '#4A7AB533',
+
+  highlight:     '#F5A623',  // lightbulb yellow — use for badges, CTAs, highlights
+  highlightBg:   '#FEF3DC',
+  highlightDark: '#C47D0E',
 
   bg:           '#0A0F1E',
   surface:      '#111827',
   surfaceDim:   '#1E2A3A',
-  card:         '#162040',
-  border:       '#1A2E5C',
-  borderLight:  '#1A56DB33',
+  card:         '#1C2A40',
+  border:       '#1A3A6E',
+  borderLight:  '#4A7AB533',
 
   // 1 = best (green), 5 = worst (red)
   score1: '#22C55E',  // great / very calm
-  score2: '#60A5FA',  // good
+  score2: '#7AABDB',  // good  (logo-blue family, was #60A5FA)
   score3: '#FBBF24',  // okay
   score4: '#FB923C',  // low / impulsive
   score5: '#EF4444',  // very bad / very impulsive
@@ -23,15 +27,15 @@ export const Colors = {
   textSecondary: '#A8B4CC',
   textMuted:     '#5A6A82',
 
-  error:   '#EF4444',
-  success: '#22C55E',
-  white:   '#FFFFFF',
-  btnColor: '#1A56DB',
+  error:    '#EF4444',
+  success:  '#22C55E',
+  white:    '#FFFFFF',
+  btnColor: '#4A7AB5',
 };
 
 // Returns color for a score where 1=best, 5=worst
 export function scoreColor(score) {
-  const colors = ['#22C55E', '#60A5FA', '#FBBF24', '#FB923C', '#EF4444'];
+  const colors = ['#22C55E', '#7AABDB', '#FBBF24', '#FB923C', '#EF4444'];
   return colors[(score ?? 3) - 1] ?? '#FBBF24';
 }
 
