@@ -18,6 +18,7 @@ import HomeScreen           from '../screens/home/HomeScreen';
 import LogEntryScreen       from '../screens/log/LogEntryScreen';
 import LogHistoryScreen     from '../screens/log/LogHistoryScreen';
 import ProfileScreen        from '../screens/profile/ProfileScreen';
+import LanguageScreen       from '../screens/profile/LanguageScreen';
 import MedicationsScreen    from '../screens/medications/MedicationsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -42,6 +43,7 @@ function AppStack() {
       <Stack.Screen name="LogEntry"    component={LogEntryScreen} />
       <Stack.Screen name="LogHistory"  component={LogHistoryScreen} />
       <Stack.Screen name="Profile"     component={ProfileScreen} />
+      <Stack.Screen name="Language"    component={LanguageScreen} />
       <Stack.Screen name="Medications" component={MedicationsScreen} />
       <Stack.Screen name="PinSetup"    component={PinSetupScreen} />
       <Stack.Screen name="PinConfirm"  component={PinConfirmScreen} />
@@ -63,7 +65,6 @@ function RootNavigator() {
     );
   }
 
-  // New user — show Welcome directly without navigation
   if (isNewUser) return <WelcomeScreen standalone />;
 
   return <AppStack />;
@@ -76,7 +77,7 @@ export default function AppNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#0A0F1E', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color="#1A56DB" size="large" />
+        <ActivityIndicator color="#4A7AB5" size="large" />
       </View>
     );
   }
