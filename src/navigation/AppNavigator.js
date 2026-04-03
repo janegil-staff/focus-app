@@ -17,7 +17,6 @@ import WelcomeScreen          from '../screens/onboarding/WelcomeScreen';
 import HomeScreen             from '../screens/home/HomeScreen';
 import LogEntryScreen         from '../screens/log/LogEntryScreen';
 import LogHistoryScreen       from '../screens/log/LogHistoryScreen';
-import CalendarScreen         from '../screens/log/CalendarScreen';
 import ProfileScreen          from '../screens/profile/ProfileScreen';
 import LanguageScreen         from '../screens/profile/LanguageScreen';
 import PersonalSettingsScreen from '../screens/profile/PersonalSettingsScreen';
@@ -44,7 +43,6 @@ function AppStack() {
       <Stack.Screen name="Welcome"          component={WelcomeScreen} />
       <Stack.Screen name="LogEntry"         component={LogEntryScreen} />
       <Stack.Screen name="LogHistory"       component={LogHistoryScreen} />
-      <Stack.Screen name="Calendar"         component={CalendarScreen} />
       <Stack.Screen name="Profile"          component={ProfileScreen} />
       <Stack.Screen name="Language"         component={LanguageScreen} />
       <Stack.Screen name="PersonalSettings" component={PersonalSettingsScreen} />

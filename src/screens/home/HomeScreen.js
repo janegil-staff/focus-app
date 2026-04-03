@@ -182,8 +182,8 @@ export default function HomeScreen({ navigation }) {
   ];
 
   const menuItems = [
-    { labelKey: 'myData',       screen: 'Calendar' },  // ← opens CalendarScreen
-    { labelKey: 'myDiary',      screen: 'LogHistory' },
+    { labelKey: 'myData',       screen: 'LogHistory', params: { initialTab: 'diary' } },
+    { labelKey: 'myDiary',      screen: 'LogHistory', params: { initialTab: 'calendar' } },
     { labelKey: 'shareData',    screen: 'Profile' },
     { labelKey: 'myMedication', screen: 'Medications' },
   ];
@@ -237,7 +237,7 @@ export default function HomeScreen({ navigation }) {
                 <TouchableOpacity
                   key={item.labelKey}
                   style={s.gridCard}
-                  onPress={() => navigation.navigate(item.screen)}
+                  onPress={() => navigation.navigate(item.screen, item.params ?? {})}
                   activeOpacity={0.75}
                 >
                   <Icon color={theme.accent} size={46} />

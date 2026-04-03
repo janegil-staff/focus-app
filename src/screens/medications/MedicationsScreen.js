@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { Spacing, FontSize } from "../../theme";
-import { medsApi } from "../../api";
+import client from "../../api/client";
 
 const ADHD_MEDICATIONS = [
   {
@@ -40,12 +40,36 @@ const ADHD_MEDICATIONS = [
 ];
 
 export default function MedicationsScreen({ navigation }) {
-  const { theme } = useTheme(); // ← theme, not colors
+  const { theme } = useTheme();
   const { user, updateUser } = useAuth();
 
-  const [selected, setSelected] = useState(new Set(user?.medications ?? []));
+  const [selected, setSelected] = useState(new Set());
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Load saved medications from backend on mount
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await client.get("/api/patient/profile", {
+          headers: { "Cache-Control": "no-cache" },
+          params: { _t: Date.now() }, // cache buster
+        });
+        console.log("Profile medications:", res.data?.data?.medications);
+        console.log("Profile data:", JSON.stringify(res.data?.data));
+        const meds = res.data?.data?.medications ?? [];
+        console.log("Medications from profile:", meds);
+        setSelected(new Set(meds));
+      } catch (e) {
+        console.log("Load error:", e?.response?.data ?? e?.message);
+        setSelected(new Set(user?.medications ?? []));
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -67,22 +91,16 @@ export default function MedicationsScreen({ navigation }) {
   const save = async () => {
     setSaving(true);
     try {
-      const client = (await import("../../api/client")).default;
-      const res = await client.patch("/api/patient/medications/bulk", {
+      await client.patch("/api/patient/medications/bulk", {
         medications: [...selected],
       });
-      console.log("Save response:", res.data);
       updateUser({ ...user, medications: [...selected] });
       navigation.goBack();
     } catch (e) {
-      console.log("Save error full:", JSON.stringify(e?.response?.data));
-      console.log("Save error status:", e?.response?.status);
-      console.log("Save error message:", e?.message);
+      console.log("Save error:", e?.response?.data ?? e?.message);
       Alert.alert(
         "Error",
-        e?.response?.data?.message ||
-          e?.message ||
-          "Could not save medications.",
+        e?.response?.data?.error || "Could not save medications.",
       );
     } finally {
       setSaving(false);
@@ -90,6 +108,23 @@ export default function MedicationsScreen({ navigation }) {
   };
 
   const s = makeStyles(theme);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe} edges={["top"]}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={s.back}>‹</Text>
+          </TouchableOpacity>
+          <Text style={s.title}>Medications</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={s.centered}>
+          <ActivityIndicator size="large" color={theme.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
@@ -178,6 +213,7 @@ export default function MedicationsScreen({ navigation }) {
 function makeStyles(t) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
+    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
     header: {
       flexDirection: "row",
       alignItems: "center",

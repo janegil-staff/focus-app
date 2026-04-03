@@ -1,98 +1,436 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLogs } from '../../context/LogsContext';
 import { useTheme } from '../../context/ThemeContext';
-import { scoreColor, Spacing, FontSize, Radius } from '../../theme';
+import { useLang } from '../../context/LangContext';
+import { Spacing, FontSize, Radius } from '../../theme';
 
-function ScoreBadge({ score, size = 30 }) {
-  const color = scoreColor(score);
+// ── Score colors: 1=worst(red) → 5=best(green) ────────────────────────────────
+const SCORE_COLORS = {
+  1: '#EF4444',
+  2: '#FB923C',
+  3: '#FBBF24',
+  4: '#7AABDB',
+  5: '#22C55E',
+};
+
+function avgScore(log) {
+  const vals = [log.mood, log.focus, log.sleep, log.energy, log.impulsivity].filter(Boolean);
+  if (!vals.length) return null;
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+}
+
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function firstWeekday(year, month) {
+  const d = new Date(year, month, 1).getDay();
+  return d === 0 ? 6 : d - 1;
+}
+
+function toDateStr(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// ── Score badge for diary list ─────────────────────────────────────────────────
+function ScoreBadge({ score, size = 28 }) {
+  if (!score) return <View style={{ width: size, height: size }} />;
+  const color = SCORE_COLORS[score];
   return (
     <View style={{
-      width: size, height: size,
-      borderRadius: Radius.sm,
-      borderWidth: 1,
-      borderColor: color + '66',
+      width: size, height: size, borderRadius: size / 2,
+      borderWidth: 1.5, borderColor: color,
       backgroundColor: color + '26',
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: 'center', alignItems: 'center',
     }}>
       <Text style={{ color, fontSize: size * 0.38, fontWeight: '700' }}>{score}</Text>
     </View>
   );
 }
 
-export default function LogHistoryScreen({ navigation }) {
-  const { logs }  = useLogs();
-  const { theme } = useTheme();
-  const s = makeStyles(theme);
+// ── Calendar tab ───────────────────────────────────────────────────────────────
+function CalendarTab({ logs, loading, navigation, t, theme }) {
+  const now = new Date();
+  const [year,  setYear]  = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const PRIMARY = theme?.accent ?? '#4a7ab5';
+  const NAVY    = '#2d4a6e';
+  const MUTED   = '#8fa8c8';
 
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const scoreMap = {};
+  logs.forEach((log) => {
+    const s = avgScore(log);
+    if (s) scoreMap[log.date] = s;
+  });
+
+  const goBack = () => {
+    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
+    else setMonth((m) => m - 1);
   };
+  const goForward = () => {
+    if (year === now.getFullYear() && month === now.getMonth()) return;
+    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
+    else setMonth((m) => m + 1);
+  };
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  const totalDays   = daysInMonth(year, month);
+  const startOffset = firstWeekday(year, month);
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= totalDays; d++) cells.push(d);
+
+  const monthLogs = logs.filter((l) => {
+    const [ly, lm] = l.date.split('-').map(Number);
+    return ly === year && lm === month + 1;
+  });
+  const totalLogged = monthLogs.length;
+  const avgAll = totalLogged
+    ? Math.round(monthLogs.reduce((s, l) => s + (avgScore(l) ?? 0), 0) / totalLogged)
+    : null;
+
+  const scoreLabels = [
+    t.scoreVeryLow   ?? 'Very low',
+    t.scoreLow       ?? 'Low',
+    t.scoreModerate  ?? 'Moderate',
+    t.scoreGood      ?? 'Good',
+    t.scoreExcellent ?? 'Excellent',
+  ];
+
+  const countByScore = [5, 4, 3, 2, 1].map((s) => ({
+    score: s,
+    count: monthLogs.filter((l) => avgScore(l) === s).length,
+    label: scoreLabels[s - 1],
+    color: SCORE_COLORS[s],
+  }));
+
+  const today    = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
+  const months   = t.months   ?? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const weekdays = t.weekdays ?? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={s.back}>‹</Text>
+    <View style={{ flex: 1 }}>
+      {/* Month navigator */}
+      <View style={cal.monthNav}>
+        <TouchableOpacity onPress={goBack} style={cal.navBtn}>
+          <Text style={[cal.navArrow, { color: NAVY }]}>‹</Text>
         </TouchableOpacity>
-        <Text style={s.title}>History</Text>
-        <View style={{ width: 30 }} />
+        <Text style={[cal.monthTitle, { color: NAVY }]}>
+          {(months[month] ?? '').toUpperCase()}{'  '}{year}
+        </Text>
+        <TouchableOpacity
+          onPress={goForward}
+          style={[cal.navBtn, isCurrentMonth && { opacity: 0.3 }]}
+          disabled={isCurrentMonth}
+        >
+          <Text style={[cal.navArrow, { color: isCurrentMonth ? '#ccc' : NAVY }]}>›</Text>
+        </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={logs}
-        keyExtractor={(item) => item.date}
-        contentContainerStyle={s.list}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Text style={s.emptyText}>No logs yet</Text>
+      {/* Grid */}
+      <View style={[cal.card, { backgroundColor: '#fff' }]}>
+        <View style={cal.weekdayRow}>
+          {weekdays.map((d, i) => (
+            <Text key={i} style={[cal.weekdayLabel, { color: MUTED }]}>{d}</Text>
+          ))}
+        </View>
+
+        {loading ? (
+          <ActivityIndicator color={PRIMARY} style={{ marginVertical: 24 }} />
+        ) : (
+          <View style={cal.grid}>
+            {cells.map((day, i) => {
+              if (!day) return <View key={`e-${i}`} style={cal.cell} />;
+              const dateStr     = toDateStr(year, month, day);
+              const score       = scoreMap[dateStr];
+              const isToday     = dateStr === today;
+              const existingLog = logs.find((l) => l.date === dateStr) ?? null;
+              const bgColor     = score ? SCORE_COLORS[score] : undefined;
+
+              return (
+                <TouchableOpacity
+                  key={dateStr}
+                  style={cal.cell}
+                  onPress={() => navigation.navigate('LogEntry', { date: dateStr, log: existingLog })}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    cal.cellInner,
+                    bgColor && { backgroundColor: bgColor, borderColor: bgColor },
+                    isToday && !score && { borderColor: PRIMARY, borderWidth: 2 },
+                  ]}>
+                    <Text style={[
+                      cal.cellText,
+                      { color: score ? '#fff' : NAVY },
+                      isToday && !score && { color: PRIMARY, fontWeight: '800' },
+                    ]}>
+                      {day}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={s.row}
-            onPress={() => navigation.navigate('LogEntry', { date: item.date, log: item })}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={s.rowDate}>{formatDate(item.date)}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 2 }}>
-                {item.medicationTaken && <Text style={{ fontSize: 12, marginRight: 4 }}>💊</Text>}
-                {item.note           && <Text style={{ fontSize: 12 }}>📝</Text>}
-              </View>
-            </View>
-            <View style={s.badges}>
-              <ScoreBadge score={item.mood}   size={28} />
-              <ScoreBadge score={item.focus}  size={28} />
-              <ScoreBadge score={item.sleep}  size={28} />
-              <ScoreBadge score={item.energy} size={28} />
-            </View>
-            <Text style={s.chevron}>›</Text>
-          </TouchableOpacity>
         )}
-      />
-    </SafeAreaView>
+      </View>
+
+      {/* Legend */}
+      <View style={cal.legendRow}>
+        {[1, 2, 3, 4, 5].map((s) => (
+          <View key={s} style={cal.legendItem}>
+            <View style={[cal.legendDot, { backgroundColor: SCORE_COLORS[s] }]} />
+            <Text style={[cal.legendLabel, { color: NAVY }]}>{scoreLabels[s - 1]}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Summary */}
+      <View style={[cal.card, { backgroundColor: '#fff' }]}>
+        <Text style={[cal.sectionTitle, { color: NAVY }]}>{t.monthSummary ?? 'Month summary'}</Text>
+        <View style={cal.summaryRow}>
+          <View style={cal.summaryItem}>
+            <Text style={[cal.summaryValue, { color: PRIMARY }]}>{totalLogged}</Text>
+            <Text style={[cal.summarySubLabel, { color: MUTED }]}>{t.daysLoggedShort ?? 'Days logged'}</Text>
+          </View>
+          <View style={[cal.divider, { backgroundColor: '#e8eef5' }]} />
+          <View style={cal.summaryItem}>
+            <Text style={[cal.summaryValue, { color: avgAll ? SCORE_COLORS[avgAll] : MUTED }]}>
+              {avgAll ? scoreLabels[avgAll - 1] : '—'}
+            </Text>
+            <Text style={[cal.summarySubLabel, { color: MUTED }]}>{t.avgScore ?? 'Avg. score'}</Text>
+          </View>
+          <View style={[cal.divider, { backgroundColor: '#e8eef5' }]} />
+          <View style={cal.summaryItem}>
+            <Text style={[cal.summaryValue, { color: PRIMARY }]}>{totalDays - totalLogged}</Text>
+            <Text style={[cal.summarySubLabel, { color: MUTED }]}>{t.missing ?? 'Missing'}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Score breakdown */}
+      <View style={[cal.card, { backgroundColor: '#fff', marginBottom: 40 }]}>
+        <Text style={[cal.sectionTitle, { color: NAVY }]}>{t.scoreBreakdown ?? 'Score breakdown'}</Text>
+        {countByScore.map(({ score, count, label, color }) => (
+          <View key={score} style={cal.breakdownRow}>
+            <View style={[cal.breakdownDot, { backgroundColor: color }]} />
+            <Text style={[cal.breakdownLabel, { color: NAVY }]}>{label}</Text>
+            <View style={[cal.breakdownBarBg, { backgroundColor: '#e8eef5' }]}>
+              <View style={[
+                cal.breakdownBar,
+                { backgroundColor: color, width: totalLogged ? `${Math.round((count / totalLogged) * 100)}%` : '0%' },
+              ]} />
+            </View>
+            <Text style={[cal.breakdownCount, { color: MUTED }]}>{count}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
-const makeStyles = (t) => StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: t.bg },
-  header:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: t.border },
-  back:      { color: t.text, fontSize: 30, marginRight: 8 },
-  title:     { color: t.text, fontSize: FontSize.lg, fontWeight: '600', flex: 1 },
-  list:      { padding: Spacing.lg, gap: Spacing.sm },
+const cal = StyleSheet.create({
+  monthNav:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
+  navBtn:      { padding: 8 },
+  navArrow:    { fontSize: 28, fontWeight: '300' },
+  monthTitle:  { fontSize: 16, fontWeight: '800', letterSpacing: 1 },
+  card:        { borderRadius: 14, padding: 16, marginHorizontal: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  sectionTitle:{ fontSize: 14, fontWeight: '700', marginBottom: 12 },
+  weekdayRow:  { flexDirection: 'row', marginBottom: 6 },
+  weekdayLabel:{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700' },
+  grid:        { flexDirection: 'row', flexWrap: 'wrap', padding: 2 },
+  cell:        { width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', padding: 4 },
+  cellInner:   { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 100, borderWidth: 1.5, borderColor: '#e0e7ef' },
+  cellText:    { fontSize: 13, fontWeight: '600' },
+  legendRow:   { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 16, marginBottom: 12, flexWrap: 'wrap', gap: 4 },
+  legendItem:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot:   { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { fontSize: 10, fontWeight: '500' },
+  summaryRow:      { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+  summaryItem:     { alignItems: 'center', flex: 1 },
+  summaryValue:    { fontSize: 20, fontWeight: '800' },
+  summarySubLabel: { fontSize: 11, marginTop: 2 },
+  divider:         { width: 1, height: 40 },
+  breakdownRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  breakdownDot:    { width: 10, height: 10, borderRadius: 5 },
+  breakdownLabel:  { fontSize: 12, fontWeight: '500', width: 80 },
+  breakdownBarBg:  { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
+  breakdownBar:    { height: '100%', borderRadius: 4 },
+  breakdownCount:  { fontSize: 12, fontWeight: '600', width: 24, textAlign: 'right' },
+});
+
+// ── Main screen ────────────────────────────────────────────────────────────────
+export default function LogHistoryScreen({ navigation, route }) {
+  const [activeTab, setActiveTab] = useState(route?.params?.initialTab ?? 'calendar');
+  const { logs, loading, fetchLogs, getLogForDate } = useLogs();
+  const { theme } = useTheme();
+  const { t }     = useLang();
+  const insets    = useSafeAreaInsets();
+  const PRIMARY   = theme?.accent ?? '#4a7ab5';
+
+  useFocusEffect(useCallback(() => { fetchLogs(); }, [fetchLogs]));
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const s = makeStyles(theme, insets);
+
+  return (
+    <View style={[s.root, { backgroundColor: theme.bgSecondary ?? '#F0F4F8' }]}>
+
+      {/* Header */}
+      <View style={[s.header, { backgroundColor: PRIMARY, paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+          <Text style={s.back}>‹</Text>
+        </TouchableOpacity>
+
+        {/* Tab buttons */}
+        <View style={s.tabs}>
+          <TouchableOpacity
+            style={[s.tab, activeTab === 'calendar' && s.tabActive]}
+            onPress={() => setActiveTab('calendar')}
+            activeOpacity={0.8}
+          >
+            <Text style={[s.tabText, activeTab === 'calendar' && s.tabTextActive]}>
+              {t.calendar ?? 'Calendar'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.tab, activeTab === 'diary' && s.tabActive]}
+            onPress={() => setActiveTab('diary')}
+            activeOpacity={0.8}
+          >
+            <Text style={[s.tabText, activeTab === 'diary' && s.tabTextActive]}>
+              {t.history ?? 'Diary'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ width: 40 }} />
+      </View>
+
+      {/* Calendar tab */}
+      {activeTab === 'calendar' && (
+        <FlatList
+          data={[]}
+          renderItem={null}
+          ListHeaderComponent={
+            <CalendarTab
+              logs={logs}
+              loading={loading}
+              navigation={navigation}
+              t={t}
+              theme={theme}
+            />
+          }
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      {/* Diary tab */}
+      {activeTab === 'diary' && (
+        <FlatList
+          data={logs}
+          keyExtractor={(item) => item.date}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={s.empty}>
+              <Text style={[s.emptyText, { color: theme.textMuted }]}>
+                {t.noLogs ?? 'No logs yet'}
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const score = avgScore(item);
+            return (
+              <TouchableOpacity
+                style={[s.row, { backgroundColor: theme.card ?? '#fff', borderColor: theme.border }]}
+                onPress={() => navigation.navigate('LogEntry', { date: item.date, log: item })}
+              >
+                {/* Score ring on the left */}
+                <View style={[
+                  s.scoreRing,
+                  score && { borderColor: SCORE_COLORS[score], backgroundColor: SCORE_COLORS[score] + '20' },
+                ]}>
+                  {score ? (
+                    <Text style={[s.scoreRingText, { color: SCORE_COLORS[score] }]}>{score}</Text>
+                  ) : (
+                    <Text style={[s.scoreRingText, { color: theme.textMuted }]}>—</Text>
+                  )}
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.rowDate, { color: theme.text }]}>{formatDate(item.date)}</Text>
+                  <View style={{ flexDirection: 'row', marginTop: 3, gap: 6 }}>
+                    <ScoreBadge score={item.mood}        size={22} />
+                    <ScoreBadge score={item.focus}       size={22} />
+                    <ScoreBadge score={item.sleep}       size={22} />
+                    <ScoreBadge score={item.energy}      size={22} />
+                    <ScoreBadge score={item.impulsivity} size={22} />
+                    {item.medicationTaken && <Text style={{ fontSize: 14 }}>💊</Text>}
+                    {item.note            && <Text style={{ fontSize: 14 }}>📝</Text>}
+                  </View>
+                </View>
+                <Text style={[s.chevron, { color: theme.textMuted }]}>›</Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+const makeStyles = (t, insets) => StyleSheet.create({
+  root: { flex: 1 },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  backBtn: { width: 40 },
+  back:    { color: '#fff', fontSize: 30 },
+
+  tabs: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    padding: 3,
+  },
+  tab: {
+    flex: 1, paddingVertical: 7,
+    borderRadius: 17,
+    alignItems: 'center',
+  },
+  tabActive:     { backgroundColor: '#fff' },
+  tabText:       { color: 'rgba(255,255,255,0.8)', fontSize: FontSize.sm, fontWeight: '600' },
+  tabTextActive: { color: t.accent ?? '#4a7ab5', fontWeight: '700' },
+
+  list:  { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: 40 },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: t.card,
-    borderRadius: Radius.md,
-    borderWidth: 1, borderColor: t.border,
+    borderRadius: Radius.md, borderWidth: 1,
     padding: Spacing.md, gap: Spacing.sm,
   },
-  rowDate:  { color: t.text, fontSize: FontSize.md, fontWeight: '500' },
-  badges:   { flexDirection: 'row', gap: 4 },
-  chevron:  { color: t.textMuted, fontSize: 20 },
+  scoreRing: {
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 2, borderColor: '#e0e7ef',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  scoreRingText: { fontSize: 15, fontWeight: '800' },
+  rowDate:  { fontSize: FontSize.md, fontWeight: '500' },
+  chevron:  { fontSize: 20 },
   empty:    { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
-  emptyText:{ color: t.textMuted, fontSize: FontSize.md },
+  emptyText:{ fontSize: FontSize.md },
 });
