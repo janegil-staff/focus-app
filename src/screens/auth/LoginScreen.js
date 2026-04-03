@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, KeyboardAvoidingView, Platform, TextInput,
+  KeyboardAvoidingView, Platform, TextInput, Image,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLang } from '../../context/LangContext';
 import { FontSize, Spacing } from '../../theme';
 
 export default function LoginScreen({ navigation }) {
   const { login }    = useAuth();
   const { theme }    = useTheme();
+  const { t }        = useLang();
   const [email,   setEmail]   = useState('');
   const [pin,     setPin]     = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export default function LoginScreen({ navigation }) {
   const s = makeStyles(theme);
 
   const submit = async () => {
-    if (!email.trim() || !pin) { setError('Please fill in all fields'); return; }
+    if (!email.trim() || !pin) { setError(t.errorSave); return; }
     if (!/^\d{4}$/.test(pin))  { setError('PIN must be 4 digits'); return; }
     setLoading(true); setError('');
     try {
@@ -43,30 +45,30 @@ export default function LoginScreen({ navigation }) {
               style={s.logo}
               resizeMode="contain"
             />
-            <Text style={s.title}>FocusApp</Text>
-            <Text style={s.subtitle}>ADHD Daily Tracker</Text>
+            <Text style={s.title}>{t.appName}</Text>
+            <Text style={s.subtitle}>{t.tagline}</Text>
           </View>
 
           <View style={{ width: '100%' }}>
             {error ? <Text style={s.error}>{error}</Text> : null}
-            <Field label="Email*" value={email} onChangeText={setEmail} keyboardType="email-address" theme={theme} />
-            <Field label="Pin*"   value={pin}   onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" secureTextEntry theme={theme} />
+            <Field label={`${t.email}*`} value={email} onChangeText={setEmail} keyboardType="email-address" theme={theme} />
+            <Field label={`${t.pinCode}*`} value={pin} onChangeText={(v) => setPin(v.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" secureTextEntry theme={theme} />
           </View>
 
           <View style={{ height: Spacing.xl }} />
 
           <TouchableOpacity style={s.btn} onPress={submit} activeOpacity={0.85}>
-            <Text style={s.btnText}>{loading ? '...' : 'LOG IN'}</Text>
+            <Text style={s.btnText}>{loading ? '...' : t.login.toUpperCase()}</Text>
           </TouchableOpacity>
 
           <View style={s.links}>
-            <Text style={s.linkMuted}>Don't have an account?</Text>
+            <Text style={s.linkMuted}>{t.noAccount}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={s.linkBold}>SIGN UP</Text>
+              <Text style={s.linkBold}>{t.signUp}</Text>
             </TouchableOpacity>
             <View style={{ height: Spacing.lg }} />
             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-              <Text style={s.linkBold}>FORGOTTEN YOUR PIN?</Text>
+              <Text style={s.linkBold}>{t.forgotPin}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -100,7 +102,7 @@ const makeStyles = (t) => StyleSheet.create({
   bg:       { flex: 1, backgroundColor: t.bg },
   scroll:   { flexGrow: 1, paddingHorizontal: 30, paddingTop: 70, paddingBottom: 50, alignItems: 'center' },
   header:   { alignItems: 'center', marginBottom: 40, width: '100%' },
-  logo:     { width: 150, height: 150, borderRadius: 0 },
+  logo:     { width: 150, height: 150 },
   title:    { color: t.text, fontSize: 26, fontWeight: '700', marginTop: 16, letterSpacing: 0.5 },
   subtitle: { color: t.textMuted, fontSize: FontSize.xs, letterSpacing: 2, marginTop: 4 },
   error:    { color: '#C62828', fontSize: FontSize.sm, marginBottom: Spacing.md, width: '100%' },

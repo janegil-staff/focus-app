@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, Dimensions,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path, Circle, Line, Polyline, Rect, Ellipse } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useLogs } from '../../context/LogsContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLang } from '../../context/LangContext';
 import { FontSize, Spacing, Radius } from '../../theme';
 
 const { width } = Dimensions.get('window');
@@ -15,13 +17,161 @@ function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const SCORE_COLORS = ['#EF4444', '#FB923C', '#FBBF24', '#7AABDB', '#22C55E'];
+// ── Stat row icons — contextually relevant ─────────────────────────────────────
 
+// Days logged — calendar with checkmark
+function IconCalendarCheck({ color, size = 32 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Rect x="3" y="6" width="26" height="23" rx="3" stroke={color} strokeWidth="2" />
+      <Line x1="3" y1="13" x2="29" y2="13" stroke={color} strokeWidth="2" />
+      <Line x1="10" y1="3" x2="10" y2="9" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="22" y1="3" x2="22" y2="9" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M10 21 L14 25 L22 17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// Avg mood — smiley face
+function IconMood({ color, size = 32 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Circle cx="16" cy="16" r="13" stroke={color} strokeWidth="2" />
+      <Circle cx="11" cy="13" r="1.5" fill={color} />
+      <Circle cx="21" cy="13" r="1.5" fill={color} />
+      <Path d="M10 19 Q16 25 22 19" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none" />
+    </Svg>
+  );
+}
+
+// Avg focus — target / bullseye
+function IconFocus({ color, size = 32 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Circle cx="16" cy="16" r="13" stroke={color} strokeWidth="2" />
+      <Circle cx="16" cy="16" r="8"  stroke={color} strokeWidth="2" />
+      <Circle cx="16" cy="16" r="3"  fill={color} />
+      {/* Arrow pointing to center */}
+      <Line x1="26" y1="6" x2="19" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Polyline points="23,6 26,6 26,9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// Avg sleep — moon + stars
+function IconSleep({ color, size = 32 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path
+        d="M20 6 C14 6 9 11 9 17 C9 23 14 27 20 27 C24 27 27 25 29 22 C26 23 22 22 19 19 C16 16 15 12 16 8 C17.5 7 18.8 6.2 20 6 Z"
+        stroke={color} strokeWidth="2" strokeLinejoin="round" fill="none"
+      />
+      <Circle cx="25" cy="8"  r="1.5" fill={color} />
+      <Circle cx="28" cy="13" r="1"   fill={color} opacity="0.7" />
+      <Circle cx="22" cy="4"  r="1"   fill={color} opacity="0.7" />
+    </Svg>
+  );
+}
+
+// Medication — pill capsule
+function IconPill({ color, size = 32 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Rect x="4" y="12" width="24" height="10" rx="5" stroke={color} strokeWidth="2" />
+      <Line x1="16" y1="12" x2="16" y2="22" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M4 17 C4 14.2 6.2 12 9 12 L16 12 L16 22 L9 22 C6.2 22 4 19.8 4 17 Z" fill={color} opacity="0.18" />
+    </Svg>
+  );
+}
+
+// ── Grid icons ─────────────────────────────────────────────────────────────────
+
+function IconMyData({ color, size = 46 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <Line x1="6" y1="42" x2="44" y2="42" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="6" y1="42" x2="6"  y2="8"  stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Polyline points="6,36 16,28 26,32 36,18 44,12" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <Circle cx="16" cy="28" r="2.5" fill={color} />
+      <Circle cx="26" cy="32" r="2.5" fill={color} />
+      <Circle cx="36" cy="18" r="2.5" fill={color} />
+      <Polyline points="39,8 44,12 40,16" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+}
+
+function IconMyDiary({ color, size = 46 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <Rect x="10" y="6" width="28" height="36" rx="3" stroke={color} strokeWidth="2.2" />
+      <Line x1="10" y1="14" x2="38" y2="14" stroke={color} strokeWidth="1.5" />
+      <Line x1="15" y1="22" x2="33" y2="22" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+      <Line x1="15" y1="28" x2="33" y2="28" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+      <Line x1="15" y1="34" x2="26" y2="34" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+      <Line x1="32" y1="36" x2="40" y2="28" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M40 28 L43 25 L41 23 L38 26 Z" fill={color} />
+      <Line x1="32" y1="36" x2="31" y2="39" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function IconShareData({ color, size = 46 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <Circle cx="18" cy="14" r="6" stroke={color} strokeWidth="2.2" />
+      <Path d="M6 38 C6 30 30 30 30 38" stroke={color} strokeWidth="2.2" strokeLinecap="round" fill="none" />
+      <Line x1="38" y1="28" x2="38" y2="14" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <Polyline points="33,19 38,14 43,19" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <Line x1="33" y1="30" x2="43" y2="30" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function IconMedication({ color, size = 46 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <Rect x="6" y="18" width="24" height="12" rx="6" stroke={color} strokeWidth="2.2" transform="rotate(-35 18 24)" />
+      <Line x1="10" y1="29" x2="20" y2="16" stroke={color} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      <Circle cx="36" cy="32" r="10" stroke={color} strokeWidth="2" />
+      <Line x1="36" y1="26" x2="36" y2="32" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="36" y1="32" x2="40" y2="35" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+// ── Wave background ────────────────────────────────────────────────────────────
+function WaveBackground({ color }) {
+  return (
+    <Svg width={width} height={300} viewBox={`0 0 ${width} 300`} style={StyleSheet.absoluteFill}>
+      <Path d={`M0 80 Q${width*0.25} 20 ${width*0.5} 80 Q${width*0.75} 140 ${width} 80 L${width} 300 L0 300 Z`} fill={color} opacity="0.07" />
+      <Path d={`M0 120 Q${width*0.3} 60 ${width*0.6} 120 Q${width*0.85} 160 ${width} 100 L${width} 300 L0 300 Z`} fill={color} opacity="0.05" />
+      <Path d={`M0 160 Q${width*0.4} 100 ${width*0.7} 150 Q${width*0.9} 180 ${width} 130 L${width} 300 L0 300 Z`} fill={color} opacity="0.04" />
+    </Svg>
+  );
+}
+
+// ── Clipboard header icon ──────────────────────────────────────────────────────
+function ClipboardIcon() {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 28 28" fill="none">
+      <Rect x="4" y="6" width="20" height="20" rx="3" stroke="white" strokeWidth="2" />
+      <Rect x="10" y="3" width="8" height="5" rx="1.5" stroke="white" strokeWidth="2" />
+      <Line x1="9"  y1="14" x2="19" y2="14" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      <Line x1="14" y1="9"  x2="14" y2="19" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+const STAT_ICONS  = [IconCalendarCheck, IconMood, IconFocus, IconSleep, IconPill];
+const GRID_ICONS  = [IconMyData, IconMyDiary, IconShareData, IconMedication];
+
+// ── Screen ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
-  const { user }   = useAuth();
-  const insets     = useSafeAreaInsets();
-  const { theme }  = useTheme();
-  const { logs, summary, loading, fetchLogs, fetchSummary, getLogForDate } = useLogs();
+  const { user }  = useAuth();
+  const insets    = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const { t }     = useLang();
+  const { summary, fetchLogs, fetchSummary, getLogForDate } = useLogs();
 
   const today    = getToday();
   const todayLog = getLogForDate(today);
@@ -36,209 +186,201 @@ export default function HomeScreen({ navigation }) {
 
   const s = makeStyles(theme, insets);
 
-  const menuItems = [
-    { label: 'MY DATA',       icon: '📊', screen: 'LogHistory' },
-    { label: 'MY DIARY',      icon: '📅', screen: 'LogHistory' },
-    { label: 'SHARE DATA',    icon: '📤', screen: 'Profile' },
-    { label: 'MY MEDICATION', icon: '💊', screen: 'Medications' },
+  const statRows = [
+    { labelKey: 'daysLogged', value: count,                          iconIdx: 0 },
+    { labelKey: 'avgMood',    value: (avgs.mood    ?? 0).toFixed(1), iconIdx: 1 },
+    { labelKey: 'avgFocus',   value: (avgs.focus   ?? 0).toFixed(1), iconIdx: 2 },
+    { labelKey: 'avgSleep',   value: (avgs.sleep   ?? 0).toFixed(1), iconIdx: 3 },
+    { labelKey: 'medication', value: `${medAdh}%`,                   iconIdx: 4 },
   ];
 
-  const statRows = [
-    { label: 'Days logged',   value: count,                          color: theme.accent },
-    { label: 'Avg mood',      value: (avgs.mood    ?? 0).toFixed(1), color: '#22C55E' },
-    { label: 'Avg focus',     value: (avgs.focus   ?? 0).toFixed(1), color: '#7AABDB' },
-    { label: 'Avg sleep',     value: (avgs.sleep   ?? 0).toFixed(1), color: '#FBBF24' },
-    { label: 'Medication',    value: `${medAdh}%`,                   color: '#FB923C' },
+  const menuItems = [
+    { labelKey: 'myData',       screen: 'LogHistory' },
+    { labelKey: 'myDiary',      screen: 'LogHistory' },
+    { labelKey: 'shareData',    screen: 'Profile' },
+    { labelKey: 'myMedication', screen: 'Medications' },
   ];
 
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
-      {/* Top bar */}
-      <View style={s.topBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={s.topBtn}>
-          <Text style={s.topIcon}>⚙️</Text>
+
+      {/* Header — horizontal gradient */}
+      <LinearGradient
+        colors={[theme.accent, theme.accentDark ?? '#2D4A6E']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={s.header}
+      >
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={s.headerBtn}>
+          <Text style={s.headerIcon}>⚙️</Text>
         </TouchableOpacity>
-        <View style={s.topCenter}>
-          <Text style={s.appName}>FocusApp</Text>
-          <View style={s.tagRow}>
-            <Text style={s.tagText}>KBB Medic</Text>
-          </View>
+        <View style={s.headerCenter}>
+          <Text style={s.appName}>{t.appName}</Text>
+          <Text style={s.tagline}>{t.tagline}</Text>
         </View>
         <TouchableOpacity
-          style={s.topBtn}
+          style={s.headerBtn}
           onPress={() => navigation.navigate('LogEntry', { date: today, log: todayLog })}
         >
-          <Text style={s.topIcon}>📋</Text>
+          <ClipboardIcon />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Stats — last 30 days */}
-        <Text style={s.sectionTitle}>Last 30 days</Text>
-        <View style={s.statsCard}>
-          {statRows.map((row) => (
-            <View key={row.label} style={s.statRow}>
-              <View style={[s.statDot, { backgroundColor: row.color }]} />
-              <Text style={s.statLabel}>{row.label}</Text>
-              <Text style={[s.statValue, { color: row.color }]}>{row.value}</Text>
-            </View>
-          ))}
+        {/* Stats */}
+        <Text style={s.sectionTitle}>{t.last30days}</Text>
+        <View style={s.statsList}>
+          {statRows.map((row) => {
+            const Icon = STAT_ICONS[row.iconIdx];
+            return (
+              <View key={row.labelKey} style={s.statRow}>
+                <Icon color={theme.accent} size={32} />
+                <Text style={s.statLabel}>{t[row.labelKey]}</Text>
+                <Text style={s.statValue}>{row.value}</Text>
+              </View>
+            );
+          })}
         </View>
 
-        {/* 2x2 menu grid */}
-        <View style={s.grid}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={s.gridCard}
-              onPress={() => navigation.navigate(item.screen)}
-              activeOpacity={0.8}
-            >
-              <Text style={s.gridIcon}>{item.icon}</Text>
-              <Text style={s.gridLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Grid */}
+        <View style={s.gridWrap}>
+          <WaveBackground color={theme.accent} />
+          <View style={s.grid}>
+            {menuItems.map((item, i) => {
+              const Icon = GRID_ICONS[i];
+              return (
+                <TouchableOpacity
+                  key={item.labelKey}
+                  style={s.gridCard}
+                  onPress={() => navigation.navigate(item.screen)}
+                  activeOpacity={0.75}
+                >
+                  <Icon color={theme.accent} size={46} />
+                  <Text style={s.gridLabel}>{t[item.labelKey]}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
 
-      {/* Bottom DAILY LOG button */}
-      <View style={s.bottomWrap}>
+      {/* Bottom button — horizontal gradient, slim, flush to safe area */}
+      <View style={[s.bottomWrap, { paddingBottom: (insets.bottom || 16) + Spacing.md }]}>
         <TouchableOpacity
-          style={s.dailyLogBtn}
           onPress={() => navigation.navigate('LogEntry', { date: today, log: todayLog })}
           activeOpacity={0.88}
+          style={s.dailyLogShadow}
         >
-          <Text style={s.dailyLogText}>
-            {todayLog ? '✏️  EDIT TODAY\'S LOG' : 'DAILY LOG'}
-          </Text>
+          <LinearGradient
+            colors={[theme.accent, theme.accentDark ?? '#2D4A6E']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={s.dailyLogGradient}
+          >
+            <Text style={s.dailyLogText}>
+              {todayLog ? `✏️  ${t.editTodayLog}` : t.dailyLog}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
+
     </SafeAreaView>
   );
 }
 
 const makeStyles = (t, insets = { top: 44 }) => StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: t.bg },
+  safe: { flex: 1, backgroundColor: '#FFFFFF' },
 
-  // Top bar
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: t.accent,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    paddingTop: insets.top + Spacing.md,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: insets.top + Spacing.sm,
+    paddingBottom: Spacing.xl,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
   },
-  topBtn:    { width: 40, alignItems: 'center' },
-  topIcon:   { fontSize: 22 },
-  topCenter: { alignItems: 'center' },
-  appName:   { color: '#FFFFFF', fontSize: FontSize.lg, fontWeight: '700', letterSpacing: 0.5 },
-  tagRow:    { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  tagText:   { color: 'rgba(255,255,255,0.8)', fontSize: FontSize.xs, letterSpacing: 1 },
+  headerBtn:    { width: 40, alignItems: 'center' },
+  headerIcon:   { fontSize: 22 },
+  headerCenter: { alignItems: 'center', flex: 1 },
+  appName:      { color: '#FFFFFF', fontSize: FontSize.lg, fontWeight: '700', letterSpacing: 0.5 },
+  tagline:      { color: 'rgba(255,255,255,0.75)', fontSize: FontSize.xs, letterSpacing: 0.8, marginTop: 3 },
 
   scroll:        { flex: 1 },
-  scrollContent: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
+  scrollContent: { paddingTop: Spacing.xl },
 
   sectionTitle: {
-    color: t.text,
+    color: '#111',
     fontSize: FontSize.lg,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: Spacing.md,
-  },
-
-  // Stats card
-  statsCard: {
-    backgroundColor: t.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: t.border,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.lg,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: t.border,
-  },
-  statDot: {
-    width: 32, height: 32,
-    borderRadius: 16,
-    marginRight: Spacing.md,
-  },
-  statLabel: { flex: 1, color: t.text, fontSize: FontSize.md },
-  statValue: { fontSize: FontSize.lg, fontWeight: '700' },
 
-  // 2x2 grid
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
+  statsList: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.lg },
+  statRow:   { flexDirection: 'row', alignItems: 'center', paddingVertical: 9 },
+  statLabel: { flex: 1, color: '#222', fontSize: FontSize.md, marginLeft: Spacing.md },
+  statValue: { color: t.accent, fontSize: FontSize.lg, fontWeight: '700' },
+
+  gridWrap: {
+    position: 'relative',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
   },
+  grid:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   gridCard: {
     width: (width - Spacing.lg * 2 - Spacing.md) / 2,
-    backgroundColor: t.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: t.border,
     paddingVertical: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: t.accentLight ?? '#7AABDB',
+    shadowColor: t.accent,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  gridIcon:  { fontSize: 36, marginBottom: Spacing.md },
   gridLabel: {
     color: t.accent,
-    fontSize: FontSize.sm,
+    fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 0.4,
     textAlign: 'center',
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
   },
 
-  // Bottom button
   bottomWrap: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
     paddingTop: Spacing.md,
-    backgroundColor: t.bg,
-    borderTopWidth: 1,
-    borderTopColor: t.border,
+    backgroundColor: '#FFFFFF',
   },
-  dailyLogBtn: {
+  dailyLogShadow: {
     width: '100%',
-    height: 56,
-    backgroundColor: t.accent,
-    borderRadius: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: t.accentLight ?? '#7AABDB',
+    elevation: 0,
+    overflow: 'hidden',
+  },
+  dailyLogGradient: {
+    height: 46,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: t.accent,
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
   },
   dailyLogText: {
     color: '#FFFFFF',
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     fontWeight: '800',
     letterSpacing: 2,
   },
