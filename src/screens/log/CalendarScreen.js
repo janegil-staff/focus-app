@@ -14,11 +14,19 @@ const BG    = '#f0f4f8';
 const CARD  = '#ffffff';
 const MUTED = '#8fa8c8';
 
-const SCORE_COLORS = ['#b3cde8', '#6aaed6', '#4a7ab5', '#2d5f8a', '#1a3a5c'];
+// 1=worst(red) → 5=best(green), matching how scores feel in the calendar
+const SCORE_COLORS = {
+  1: '#EF4444',
+  2: '#FB923C',
+  3: '#FBBF24',
+  4: '#7AABDB',
+  5: '#22C55E',
+};
 
 function avgScore(log) {
-  const { mood, focus, sleep, energy, impulsivity } = log;
-  return Math.round((mood + focus + sleep + energy + impulsivity) / 5);
+  const vals = [log.mood, log.focus, log.sleep, log.energy, log.impulsivity].filter(Boolean);
+  if (!vals.length) return null;
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
 
 function daysInMonth(year, month) {
@@ -48,7 +56,10 @@ export default function CalendarScreen({ navigation }) {
   useFocusEffect(useCallback(() => { fetchLogs(); }, [fetchLogs]));
 
   const scoreMap = {};
-  logs.forEach((log) => { scoreMap[log.date] = avgScore(log); });
+  logs.forEach((log) => {
+    const s = avgScore(log);
+    if (s) scoreMap[log.date] = s;
+  });
 
   const goBack = () => {
     if (month === 0) { setYear((y) => y - 1); setMonth(11); }
@@ -73,9 +84,10 @@ export default function CalendarScreen({ navigation }) {
   });
   const totalLogged = monthLogs.length;
   const avgAll = totalLogged
-    ? Math.round(monthLogs.reduce((s, l) => s + avgScore(l), 0) / totalLogged)
+    ? Math.round(monthLogs.reduce((s, l) => s + (avgScore(l) ?? 0), 0) / totalLogged)
     : null;
 
+  // score 1 = worst (red) … score 5 = best (green)
   const scoreLabels = [
     t.scoreVeryLow   ?? 'Very low',
     t.scoreLow       ?? 'Low',
@@ -84,11 +96,11 @@ export default function CalendarScreen({ navigation }) {
     t.scoreExcellent ?? 'Excellent',
   ];
 
-  const countByScore = [1, 2, 3, 4, 5].map((s) => ({
+  const countByScore = [5, 4, 3, 2, 1].map((s) => ({
     score: s,
     count: monthLogs.filter((l) => avgScore(l) === s).length,
     label: scoreLabels[s - 1],
-    color: SCORE_COLORS[s - 1],
+    color: SCORE_COLORS[s],
   }));
 
   const today    = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
@@ -140,32 +152,32 @@ export default function CalendarScreen({ navigation }) {
             <View style={styles.grid}>
               {cells.map((day, i) => {
                 if (!day) return <View key={`e-${i}`} style={styles.cell} />;
-                const dateStr    = toDateStr(year, month, day);
-                const score      = scoreMap[dateStr];
-                const isToday    = dateStr === today;
-                const existingLog = getLogForDate(dateStr); // ← look up log for this date
+                const dateStr     = toDateStr(year, month, day);
+                const score       = scoreMap[dateStr];
+                const isToday     = dateStr === today;
+                const existingLog = getLogForDate(dateStr);
+                const bgColor     = score ? SCORE_COLORS[score] : undefined;
 
                 return (
                   <TouchableOpacity
                     key={dateStr}
-                    style={[
-                      styles.cell,
-                      score != null && { backgroundColor: SCORE_COLORS[score - 1] },
-                      isToday && { borderWidth: 2, borderColor: PRIMARY },
-                    ]}
-                    onPress={() =>
-                      // ← pass log same way HomeScreen does for today
-                      navigation?.navigate?.('LogEntry', { date: dateStr, log: existingLog })
-                    }
+                    style={styles.cell}
+                    onPress={() => navigation?.navigate?.('LogEntry', { date: dateStr, log: existingLog })}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.cellText,
-                      { color: score != null ? '#fff' : NAVY },
-                      isToday && !score && { color: PRIMARY },
+                    <View style={[
+                      styles.cellInner,
+                      bgColor && { backgroundColor: bgColor, borderColor: bgColor },
+                      isToday && !score && { borderColor: PRIMARY, borderWidth: 2 },
                     ]}>
-                      {day}
-                    </Text>
+                      <Text style={[
+                        styles.cellText,
+                        { color: score ? '#fff' : NAVY },
+                        isToday && !score && { color: PRIMARY, fontWeight: '800' },
+                      ]}>
+                        {day}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -173,11 +185,11 @@ export default function CalendarScreen({ navigation }) {
           )}
         </View>
 
-        {/* Legend */}
+        {/* Legend — same colors as log entry */}
         <View style={styles.legendRow}>
           {[1, 2, 3, 4, 5].map((s) => (
             <View key={s} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: SCORE_COLORS[s - 1] }]} />
+              <View style={[styles.legendDot, { backgroundColor: SCORE_COLORS[s] }]} />
               <Text style={styles.legendLabel}>{scoreLabels[s - 1]}</Text>
             </View>
           ))}
@@ -193,7 +205,7 @@ export default function CalendarScreen({ navigation }) {
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, { color: avgAll ? SCORE_COLORS[avgAll - 1] : MUTED }]}>
+              <Text style={[styles.summaryValue, { color: avgAll ? SCORE_COLORS[avgAll] : MUTED }]}>
                 {avgAll ? scoreLabels[avgAll - 1] : '—'}
               </Text>
               <Text style={styles.summarySubLabel}>{t.avgScore ?? 'Avg. score'}</Text>
@@ -239,10 +251,8 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingTop: 8 },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingBottom: 16,
   },
   backBtn:     { width: 40, alignItems: 'flex-start' },
   backArrow:   { color: '#fff', fontSize: 28, lineHeight: 30 },
@@ -267,11 +277,18 @@ const styles = StyleSheet.create({
   weekdayRow:   { flexDirection: 'row', marginBottom: 6 },
   weekdayLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700', color: MUTED },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: 2 },
   cell: {
     width: `${100 / 7}%`, aspectRatio: 1,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: 10, padding: 2,
+    padding: 4,
+  },
+  cellInner: {
+    flex: 1, width: '100%',
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: '#e0e7ef',
   },
   cellText: { fontSize: 13, fontWeight: '600' },
 

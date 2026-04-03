@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,9 @@ import {
   Switch,
   Dimensions,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useLogs } from "../../context/LogsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useLang } from "../../context/LangContext";
@@ -20,6 +21,22 @@ import { useAuth } from "../../context/AuthContext";
 import { FontSize, Spacing, Radius } from "../../theme";
 
 const { width } = Dimensions.get("window");
+
+// Full medication list — same as MedicationsScreen
+const ADHD_MEDICATIONS = [
+  { id: "methylphenidate",    name: "Methylphenidate",    brand: "Ritalin, Concerta" },
+  { id: "lisdexamfetamine",   name: "Lisdexamfetamine",   brand: "Vyvanse, Elvanse" },
+  { id: "amphetamine",        name: "Amphetamine",        brand: "Adderall" },
+  { id: "dextroamphetamine",  name: "Dextroamphetamine",  brand: "Dexedrine" },
+  { id: "atomoxetine",        name: "Atomoxetine",        brand: "Strattera" },
+  { id: "guanfacine",         name: "Guanfacine",         brand: "Intuniv" },
+  { id: "clonidine",          name: "Clonidine",          brand: "Kapvay" },
+  { id: "bupropion",          name: "Bupropion",          brand: "Wellbutrin" },
+  { id: "viloxazine",         name: "Viloxazine",         brand: "Qelbree" },
+  { id: "modafinil",          name: "Modafinil",          brand: "Provigil" },
+  { id: "dexmethylphenidate", name: "Dexmethylphenidate", brand: "Focalin" },
+  { id: "other",              name: "Other / Not listed", brand: "" },
+];
 
 // ── Score colors: 1=best(green) → 5=worst(red) ────────────────────────────────
 const SCORE_COLORS = {
@@ -37,7 +54,7 @@ function scoreColor(score) {
 // ── Score picker row ───────────────────────────────────────────────────────────
 function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
   return (
-    <View style={sr.wrap}>
+    <View style={[sr.wrap, { borderBottomColor: theme.border }]}>
       <View style={sr.top}>
         <Text style={[sr.label, { color: theme.text }]}>{label}</Text>
         {value ? (
@@ -57,20 +74,12 @@ function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
             style={[
               sr.dot,
               {
-                backgroundColor:
-                  value === n
-                    ? scoreColor(n)
-                    : (theme.bgSecondary ?? "#F0F4F8"),
+                backgroundColor: value === n ? scoreColor(n) : (theme.bgSecondary ?? "#F0F4F8"),
+                borderColor: value === n ? scoreColor(n) : theme.border,
               },
-              { borderColor: value === n ? scoreColor(n) : theme.border },
             ]}
           >
-            <Text
-              style={[
-                sr.dotNum,
-                { color: value === n ? "#FFF" : theme.textMuted },
-              ]}
-            >
+            <Text style={[sr.dotNum, { color: value === n ? "#FFF" : theme.textMuted }]}>
               {n}
             </Text>
           </TouchableOpacity>
@@ -81,119 +90,23 @@ function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
 }
 
 const sr = StyleSheet.create({
-  wrap: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  top: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 2,
-  },
-  label: { fontSize: FontSize.md, fontWeight: "500", flex: 1 },
-  badge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    color: "#FFF",
-    fontSize: FontSize.xs,
-    fontWeight: "700",
-    overflow: "hidden",
-  },
-  sub: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
-  dots: { flexDirection: "row", gap: 8, marginTop: Spacing.sm },
-  dot: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  wrap:   { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },
+  top:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
+  label:  { fontSize: FontSize.md, fontWeight: "500", flex: 1 },
+  badge:  { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 2, color: "#FFF", fontSize: FontSize.xs, fontWeight: "700", overflow: "hidden" },
+  sub:    { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  dots:   { flexDirection: "row", gap: 8, marginTop: Spacing.sm },
+  dot:    { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   dotNum: { fontSize: FontSize.sm, fontWeight: "600" },
 });
 
 // ── Section header ─────────────────────────────────────────────────────────────
 function SectionHeader({ title, theme }) {
   return (
-    <View
-      style={{
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.lg,
-        paddingBottom: Spacing.sm,
-        backgroundColor: theme.bgSecondary ?? "#F0F4F8",
-      }}
-    >
-      <Text
-        style={{
-          color: theme.textMuted,
-          fontSize: FontSize.sm,
-          fontWeight: "700",
-          letterSpacing: 0.8,
-          textTransform: "uppercase",
-        }}
-      >
+    <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.sm, backgroundColor: theme.bgSecondary ?? "#F0F4F8" }}>
+      <Text style={{ color: theme.textMuted, fontSize: FontSize.sm, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" }}>
         {title}
       </Text>
-    </View>
-  );
-}
-
-// ── Numeric input row ──────────────────────────────────────────────────────────
-function NumericRow({ label, subtitle, value, onChange, unit, theme }) {
-  return (
-    <View style={[sr.wrap, { flexDirection: "row", alignItems: "center" }]}>
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            color: theme.text,
-            fontSize: FontSize.md,
-            fontWeight: "500",
-          }}
-        >
-          {label}
-        </Text>
-        {subtitle ? (
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: FontSize.xs,
-              marginTop: 2,
-            }}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <TextInput
-          value={value}
-          onChangeText={onChange}
-          keyboardType="numeric"
-          style={{
-            width: 56,
-            height: 36,
-            borderRadius: 8,
-            borderWidth: 1.5,
-            borderColor: theme.border,
-            color: theme.text,
-            fontSize: FontSize.md,
-            fontWeight: "600",
-            textAlign: "center",
-            backgroundColor: theme.bg ?? "#FFF",
-          }}
-          placeholderTextColor={theme.textMuted}
-          placeholder="—"
-          selectionColor={theme.accent}
-        />
-        {unit ? (
-          <Text style={{ color: theme.textMuted, fontSize: FontSize.sm }}>
-            {unit}
-          </Text>
-        ) : null}
-      </View>
     </View>
   );
 }
@@ -201,38 +114,10 @@ function NumericRow({ label, subtitle, value, onChange, unit, theme }) {
 // ── Toggle row ─────────────────────────────────────────────────────────────────
 function ToggleRow({ label, subtitle, value, onChange, theme }) {
   return (
-    <View
-      style={[
-        sr.wrap,
-        {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: Spacing.md,
-        },
-      ]}
-    >
+    <View style={[sr.wrap, { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: Spacing.md, borderBottomColor: theme.border }]}>
       <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            color: theme.text,
-            fontSize: FontSize.md,
-            fontWeight: "500",
-          }}
-        >
-          {label}
-        </Text>
-        {subtitle ? (
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: FontSize.xs,
-              marginTop: 2,
-            }}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
+        <Text style={{ color: theme.text, fontSize: FontSize.md, fontWeight: "500" }}>{label}</Text>
+        {subtitle ? <Text style={{ color: theme.textSecondary, fontSize: FontSize.xs, marginTop: 2 }}>{subtitle}</Text> : null}
       </View>
       <Switch
         value={!!value}
@@ -245,58 +130,103 @@ function ToggleRow({ label, subtitle, value, onChange, theme }) {
   );
 }
 
+// ── Medication selector ────────────────────────────────────────────────────────
+function MedicationSelector({ userMedIds, selected, onToggle, theme }) {
+  // Only show meds the user has saved in their profile
+  const userMeds = ADHD_MEDICATIONS.filter((m) => userMedIds.includes(m.id));
+
+  if (userMeds.length === 0) return (
+    <View style={{ paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}>
+      <Text style={{ color: theme.textMuted, fontSize: FontSize.sm }}>
+        No medications saved. Add them in My Medication.
+      </Text>
+    </View>
+  );
+
+  return (
+    <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md }}>
+      {userMeds.map((med) => {
+        const active = selected.includes(med.id);
+        return (
+          <TouchableOpacity
+            key={med.id}
+            style={[
+              medSel.row,
+              {
+                backgroundColor: active ? (theme.accentBg ?? '#EBF4FF') : (theme.surface ?? theme.bg),
+                borderColor: active ? theme.accent : theme.border,
+              },
+            ]}
+            onPress={() => onToggle(med.id)}
+            activeOpacity={0.7}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[medSel.name, { color: active ? theme.accent : theme.text }]}>
+                {med.name}
+              </Text>
+              {med.brand ? (
+                <Text style={[medSel.brand, { color: theme.textMuted }]}>{med.brand}</Text>
+              ) : null}
+            </View>
+            <View style={[medSel.check, { borderColor: active ? theme.accent : theme.border, backgroundColor: active ? theme.accent : 'transparent' }]}>
+              {active && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const medSel = StyleSheet.create({
+  row:   { flexDirection: "row", alignItems: "center", padding: Spacing.md, marginBottom: Spacing.xs, borderRadius: 12, borderWidth: 1 },
+  name:  { fontSize: FontSize.md, fontWeight: "500" },
+  brand: { fontSize: FontSize.sm, marginTop: 2 },
+  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+});
+
 // ── Main screen ────────────────────────────────────────────────────────────────
 export default function LogEntryScreen({ navigation, route }) {
   const { date, log: existingLog } = route.params ?? {};
-  const { theme } = useTheme();
-  const { t } = useLang();
-  const { user } = useAuth();
-  const { saveLog } = useLogs();
-  const insets = useSafeAreaInsets();
-  const scrollRef = useRef(null);
+  const { theme }  = useTheme();
+  const { t }      = useLang();
+  const { user }   = useAuth();
+  const { saveLog, deleteLog } = useLogs();
+  const insets     = useSafeAreaInsets();
+  const scrollRef  = useRef(null);
 
   const isEdit = !!existingLog;
 
   // ── Field state ──────────────────────────────────────────────────────────────
-  const [mood, setMood] = useState(existingLog?.mood ?? null);
-  const [energy, setEnergy] = useState(existingLog?.energy ?? null);
-  const [focus, setFocus] = useState(existingLog?.focus ?? null);
-  const [impulsivity, setImpulsivity] = useState(
-    existingLog?.impulsivity ?? null,
-  );
-  const [sleep, setSleep] = useState(existingLog?.sleep ?? null);
-  const [tasks, setTasks] = useState(existingLog?.tasksCompleted ?? null);
-  const [screenTime, setScreenTime] = useState(
-    existingLog?.screenTime ? String(existingLog.screenTime) : "",
-  );
-  const [tookMed, setTookMed] = useState(existingLog?.tookMedication ?? false);
-  const [note, setNote] = useState(existingLog?.note ?? "");
-  const [saving, setSaving] = useState(false);
+  const [mood,        setMood]        = useState(existingLog?.mood           ?? null);
+  const [energy,      setEnergy]      = useState(existingLog?.energy         ?? null);
+  const [focus,       setFocus]       = useState(existingLog?.focus          ?? null);
+  const [impulsivity, setImpulsivity] = useState(existingLog?.impulsivity    ?? null);
+  const [sleep,       setSleep]       = useState(existingLog?.sleep          ?? null);
+  const [tasks,       setTasks]       = useState(existingLog?.tasksCompleted ?? null);
+  const [tookMed,     setTookMed]     = useState(existingLog?.medicationTaken ?? false);
+  // Selected medication IDs for today — prefill from existing log if editing
+  const [selectedMeds, setSelectedMeds] = useState(existingLog?.medicationNames ?? []);
+  const [note,        setNote]        = useState(existingLog?.note           ?? "");
+  const [saving,      setSaving]      = useState(false);
 
-  const medicines = user?.medicines ?? [];
+  // IDs of meds the user has saved in their profile
+  const userMedIds = user?.medications ?? [];
 
-  // Format display date
+  const toggleMed = (id) =>
+    setSelectedMeds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
   const displayDate = (() => {
     if (!date) return "";
     const d = new Date(date);
     return d.toLocaleDateString(undefined, {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
   })();
 
-  const hasAnyData =
-    mood ||
-    energy ||
-    focus ||
-    impulsivity ||
-    sleep ||
-    tasks ||
-    screenTime ||
-    tookMed ||
-    note;
+  const hasAnyData = mood || energy || focus || impulsivity || sleep || tasks || tookMed || note;
 
   const handleSave = async () => {
     if (!hasAnyData) {
@@ -305,31 +235,23 @@ export default function LogEntryScreen({ navigation, route }) {
     }
     setSaving(true);
     try {
-      // Strip null/undefined fields — backend may reject them
       const payload = { date };
-      if (mood != null) payload.mood = mood;
-      if (energy != null) payload.energy = energy;
-      if (focus != null) payload.focus = focus;
-      if (impulsivity != null) payload.impulsivity = impulsivity;
-      if (sleep != null) payload.sleep = sleep;
-      if (tasks != null) payload.tasksCompleted = tasks;
-      if (screenTime) payload.screenTime = parseFloat(screenTime);
-      payload.tookMedication = tookMed;
-      if (note.trim()) payload.note = note.trim();
+      if (mood        != null) payload.mood           = mood;
+      if (energy      != null) payload.energy         = energy;
+      if (focus       != null) payload.focus          = focus;
+      if (impulsivity != null) payload.impulsivity    = impulsivity;
+      if (sleep       != null) payload.sleep          = sleep;
+      if (tasks       != null) payload.tasksCompleted = tasks;
+      payload.medicationTaken = tookMed;
+      payload.medicationNames = tookMed ? selectedMeds : [];
+      if (note.trim())         payload.note           = note.trim();
 
-      console.log("[LogEntry] saving payload:", JSON.stringify(payload));
       await saveLog(payload);
       navigation.goBack();
     } catch (e) {
-      console.error(
-        "[LogEntry] save error:",
-        e?.response?.data ?? e?.message ?? e,
-      );
       Alert.alert(
         t.errorSave ?? "Error",
-        e?.response?.data?.error ??
-          e?.message ??
-          "Could not save log. Please try again.",
+        e?.response?.data?.error ?? e?.message ?? "Could not save log. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -338,7 +260,7 @@ export default function LogEntryScreen({ navigation, route }) {
 
   const handleDelete = () => {
     Alert.alert("Delete log", "Are you sure you want to delete this log?", [
-      { text: t.cancel, style: "cancel" },
+      { text: t.cancel ?? "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
@@ -356,62 +278,27 @@ export default function LogEntryScreen({ navigation, route }) {
 
   const s = makeStyles(theme, insets);
 
-  const moodLabels = t.scores?.mood ?? [
-    "Very good",
-    "Good",
-    "OK",
-    "Bad",
-    "Very bad",
-  ];
-  const focusLabels = t.scores?.focus ?? [
-    "Excellent",
-    "Good",
-    "OK",
-    "Distracted",
-    "Can't focus",
-  ];
-  const sleepLabels = t.scores?.sleep ?? [
-    "Great",
-    "Good",
-    "OK",
-    "Poor",
-    "Terrible",
-  ];
-  const energyLabels = t.scores?.energy ?? [
-    "Pumped",
-    "Energetic",
-    "OK",
-    "Tired",
-    "Exhausted",
-  ];
-  const impulsivityLabels = t.scores?.impulsivity ?? [
-    "Very calm",
-    "Calm",
-    "Some urges",
-    "Impulsive",
-    "Very impulsive",
-  ];
+  const moodLabels        = t.scores?.mood        ?? ["Very good", "Good", "OK", "Bad", "Very bad"];
+  const focusLabels       = t.scores?.focus       ?? ["Excellent", "Good", "OK", "Distracted", "Can't focus"];
+  const sleepLabels       = t.scores?.sleep       ?? ["Great", "Good", "OK", "Poor", "Terrible"];
+  const energyLabels      = t.scores?.energy      ?? ["Pumped", "Energetic", "OK", "Tired", "Exhausted"];
+  const impulsivityLabels = t.scores?.impulsivity ?? ["Very calm", "Calm", "Some urges", "Impulsive", "Very impulsive"];
 
   return (
-    <View style={s.root}>
-      {/* Header */}
+    <SafeAreaView style={s.root} edges={["bottom"]}>
+
       <LinearGradient
         colors={[theme.accent, theme.accentDark ?? "#2D4A6E"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={s.header}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={s.headerBtn}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerBtn}>
           <Text style={s.headerBack}>‹</Text>
         </TouchableOpacity>
         <View style={s.headerCenter}>
           <Text style={s.headerTitle}>
-            {isEdit
-              ? (t.editTodayLog ?? "Edit log")
-              : (t.howWasYourDay ?? "How was your day?")}
+            {isEdit ? (t.editTodayLog ?? "Edit log") : (t.howWasYourDay ?? "How was your day?")}
           </Text>
           <Text style={s.headerDate}>{displayDate}</Text>
         </View>
@@ -431,33 +318,15 @@ export default function LogEntryScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Section 1: How did you feel ── */}
-        <SectionHeader
-          title={t.howDidYouFeel ?? "How did you feel?"}
-          theme={theme}
-        />
+        {/* Section 1: How did you feel */}
+        <SectionHeader title={t.howDidYouFeel ?? "How did you feel?"} theme={theme} />
         <View style={s.section}>
-          <ScoreRow
-            label={t.mood ?? "Mood"}
-            value={mood}
-            onChange={setMood}
-            labels={moodLabels}
-            theme={theme}
-          />
-          <ScoreRow
-            label={t.energy ?? "Energy"}
-            value={energy}
-            onChange={setEnergy}
-            labels={energyLabels}
-            theme={theme}
-          />
+          <ScoreRow label={t.mood ?? "Mood"}     value={mood}   onChange={setMood}   labels={moodLabels}   theme={theme} />
+          <ScoreRow label={t.energy ?? "Energy"} value={energy} onChange={setEnergy} labels={energyLabels} theme={theme} />
         </View>
 
-        {/* ── Section 2: ADHD symptoms ── */}
-        <SectionHeader
-          title={t.adhdSymptoms ?? "ADHD symptoms"}
-          theme={theme}
-        />
+        {/* Section 2: ADHD symptoms */}
+        <SectionHeader title={t.adhdSymptoms ?? "ADHD symptoms"} theme={theme} />
         <View style={s.section}>
           <ScoreRow
             label={t.focus ?? "Focus"}
@@ -477,11 +346,11 @@ export default function LogEntryScreen({ navigation, route }) {
           />
         </View>
 
-        {/* ── Section 3: Sleep & tasks ── */}
+        {/* Section 3: Sleep & tasks */}
         <SectionHeader title={t.sleepTasks ?? "Sleep & tasks"} theme={theme} />
         <View style={s.section}>
           <ScoreRow
-            label={t.sleep ?? "Sleep quality"}
+            label={t.sleepQuality ?? "Sleep quality"}
             subtitle="How well did you sleep last night?"
             value={sleep}
             onChange={setSleep}
@@ -496,17 +365,9 @@ export default function LogEntryScreen({ navigation, route }) {
             labels={["All done", "Most", "Some", "Few", "None"]}
             theme={theme}
           />
-          <NumericRow
-            label={t.screenTime ?? "Screen time"}
-            subtitle="Total hours on screens today"
-            value={screenTime}
-            onChange={setScreenTime}
-            unit="hrs"
-            theme={theme}
-          />
         </View>
 
-        {/* ── Section 4: Medication ── */}
+        {/* Section 4: Medication */}
         <SectionHeader title={t.medicationSec ?? "Medication"} theme={theme} />
         <View style={s.section}>
           <ToggleRow
@@ -515,57 +376,22 @@ export default function LogEntryScreen({ navigation, route }) {
             onChange={setTookMed}
             theme={theme}
           />
-          {medicines.length > 0 && tookMed && (
-            <View
-              style={{
-                paddingHorizontal: Spacing.lg,
-                paddingBottom: Spacing.md,
-              }}
-            >
-              {medicines.map((med) => (
-                <View
-                  key={med.id}
-                  style={[s.medRow, { borderColor: theme.border }]}
-                >
-                  <Text
-                    style={{
-                      color: theme.text,
-                      fontSize: FontSize.sm,
-                      flex: 1,
-                    }}
-                  >
-                    {med.name}
-                  </Text>
-                  {med.atcCode ? (
-                    <Text
-                      style={{ color: theme.textMuted, fontSize: FontSize.xs }}
-                    >
-                      {med.atcCode}
-                    </Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
+          {/* Show medication selector when toggle is on */}
+          {tookMed && (
+            <MedicationSelector
+              userMedIds={userMedIds}
+              selected={selectedMeds}
+              onToggle={toggleMed}
+              theme={theme}
+            />
           )}
         </View>
 
-        {/* ── Section 5: Notes ── */}
+        {/* Section 5: Notes */}
         <SectionHeader title={t.notes ?? "Notes"} theme={theme} />
-        <View
-          style={[
-            s.section,
-            { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-          ]}
-        >
+        <View style={[s.section, { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }]}>
           <TextInput
-            style={[
-              s.noteInput,
-              {
-                color: theme.text,
-                borderColor: theme.border,
-                backgroundColor: theme.bg ?? "#FFF",
-              },
-            ]}
+            style={[s.noteInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.bg ?? "#FFF" }]}
             value={note}
             onChangeText={setNote}
             placeholder={t.howWasYourDay ?? "How was your day?"}
@@ -579,131 +405,83 @@ export default function LogEntryScreen({ navigation, route }) {
 
         {/* Score legend */}
         <View style={s.legend}>
-          <Text style={[s.legendText, { color: theme.textMuted }]}>
-            {t.scoreBest ?? "1 = Best"}
-          </Text>
+          <Text style={[s.legendText, { color: theme.textMuted }]}>{t.scoreBest ?? "1 = Best"}</Text>
           <View style={s.legendDots}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <View
-                key={n}
-                style={[s.legendDot, { backgroundColor: scoreColor(n) }]}
-              />
+              <View key={n} style={[s.legendDot, { backgroundColor: scoreColor(n) }]} />
             ))}
           </View>
-          <Text style={[s.legendText, { color: theme.textMuted }]}>
-            {t.scoreWorst ?? "5 = Worst"}
-          </Text>
+          <Text style={[s.legendText, { color: theme.textMuted }]}>{t.scoreWorst ?? "5 = Worst"}</Text>
         </View>
       </ScrollView>
 
       {/* Save button */}
-      <View
-        style={[
-          s.bottomWrap,
-          { paddingBottom: (insets.bottom || 16) + Spacing.md },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={handleSave}
-          activeOpacity={0.88}
-          style={s.saveBtn}
-          disabled={saving}
-        >
+      <View style={[s.bottomWrap, { paddingBottom: (insets.bottom || 16) + Spacing.md }]}>
+        <TouchableOpacity onPress={handleSave} activeOpacity={0.88} style={s.saveBtn} disabled={saving}>
           <LinearGradient
             colors={[theme.accent, theme.accentDark ?? "#2D4A6E"]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={s.saveBtnGradient}
           >
-            {saving ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={s.saveBtnText}>{t.saveLog ?? "Save log"}</Text>
-            )}
+            {saving
+              ? <ActivityIndicator color="#FFF" />
+              : <Text style={s.saveBtnText}>{t.saveLog ?? "Save log"}</Text>
+            }
           </LinearGradient>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
-const makeStyles = (t, insets) =>
-  StyleSheet.create({
-    root: { flex: 1, backgroundColor: t.bgSecondary ?? "#F0F4F8" },
+const makeStyles = (t, insets) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: t.bgSecondary ?? "#F0F4F8" },
 
-    // Header
-    header: {
-      paddingTop: insets.top + Spacing.sm,
-      paddingBottom: Spacing.lg,
-      paddingHorizontal: Spacing.lg,
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    headerBtn: { width: 40 },
-    headerBack: { color: "#FFF", fontSize: 28, lineHeight: 34 },
-    headerDelete: { fontSize: 20, textAlign: "right" },
-    headerCenter: { flex: 1, alignItems: "center" },
-    headerTitle: { color: "#FFF", fontSize: FontSize.lg, fontWeight: "600" },
-    headerDate: {
-      color: "rgba(255,255,255,0.75)",
-      fontSize: FontSize.xs,
-      marginTop: 2,
-    },
+  header: {
+    paddingTop: insets.top + Spacing.sm,
+    paddingBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerBtn:    { width: 40 },
+  headerBack:   { color: "#FFF", fontSize: 28, lineHeight: 34 },
+  headerDelete: { fontSize: 20, textAlign: "right" },
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerTitle:  { color: "#FFF", fontSize: FontSize.lg, fontWeight: "600" },
+  headerDate:   { color: "rgba(255,255,255,0.75)", fontSize: FontSize.xs, marginTop: 2 },
 
-    section: { backgroundColor: t.bg ?? "#FFFFFF" },
+  section: { backgroundColor: t.bg ?? "#FFFFFF" },
 
-    medRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-    },
+  medRow: {
+    flexDirection: "row", alignItems: "center",
+    paddingVertical: 8, borderBottomWidth: 1,
+  },
 
-    noteInput: {
-      borderWidth: 1.5,
-      borderRadius: Radius.md,
-      padding: Spacing.md,
-      fontSize: FontSize.md,
-      minHeight: 100,
-      lineHeight: 22,
-    },
+  noteInput: {
+    borderWidth: 1.5, borderRadius: Radius.md,
+    padding: Spacing.md, fontSize: FontSize.md,
+    minHeight: 100, lineHeight: 22,
+  },
 
-    legend: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: Spacing.sm,
-      paddingVertical: Spacing.lg,
-    },
-    legendDots: { flexDirection: "row", gap: 4 },
-    legendDot: { width: 12, height: 12, borderRadius: 6 },
-    legendText: { fontSize: FontSize.xs },
+  legend: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.lg,
+  },
+  legendDots: { flexDirection: "row", gap: 4 },
+  legendDot:  { width: 12, height: 12, borderRadius: 6 },
+  legendText: { fontSize: FontSize.xs },
 
-    // Save button
-    bottomWrap: {
-      paddingHorizontal: Spacing.lg,
-      paddingTop: Spacing.md,
-      backgroundColor: t.bg ?? "#FFFFFF",
-      borderTopWidth: 1,
-      borderTopColor: t.border,
-    },
-    saveBtn: {
-      width: "100%",
-      height: 46,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: t.accentLight ?? "#7AABDB",
-      overflow: "hidden",
-    },
-    saveBtnGradient: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    saveBtnText: {
-      color: "#FFF",
-      fontSize: FontSize.md,
-      fontWeight: "800",
-      letterSpacing: 1.5,
-    },
-  });
+  bottomWrap: {
+    paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
+    backgroundColor: t.bg ?? "#FFFFFF",
+    borderTopWidth: 1, borderTopColor: t.border,
+  },
+  saveBtn: {
+    width: "100%", height: 46, borderRadius: 8,
+    borderWidth: 1, borderColor: t.accentLight ?? "#7AABDB", overflow: "hidden",
+  },
+  saveBtnGradient: { flex: 1, justifyContent: "center", alignItems: "center" },
+  saveBtnText: { color: "#FFF", fontSize: FontSize.md, fontWeight: "800", letterSpacing: 1.5 },
+});
