@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import PinInputScreen from './PinInputScreen';
 
 export default function PinConfirmScreen({ navigation, route }) {
-  const { firstPin, returnParams = {} } = route.params ?? {};
+  const { firstPin, returnParams = {}, returnTo = 'Register' } = route.params ?? {};
 
   const onConfirm = (pin) => {
     if (pin !== firstPin) {
@@ -14,8 +14,7 @@ export default function PinConfirmScreen({ navigation, route }) {
       );
       return;
     }
-    // Go back to Register with the confirmed PIN + all form data
-    navigation.navigate('Register', { ...returnParams, pin });
+    navigation.navigate(returnTo, { ...returnParams, pin });
   };
 
   return (

@@ -3,9 +3,10 @@ import PinInputScreen from './PinInputScreen';
 
 export default function PinSetupScreen({ navigation, route }) {
   const returnParams = route?.params?.returnParams ?? {};
+  const returnTo     = route?.params?.returnTo     ?? 'Register';
 
   const onEnterPin = (pin) => {
-    navigation.navigate('PinConfirm', { firstPin: pin, returnParams });
+    navigation.navigate('PinConfirm', { firstPin: pin, returnParams, returnTo });
   };
 
   return (

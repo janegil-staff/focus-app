@@ -82,7 +82,7 @@ function WarningIcon({ size = 20 }) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const { user, logout, logoutAndClearPin, updateUser } = useAuth();
+  const { user, logout, logoutAndClearPin, updateUser, savePin } = useAuth();
   const { theme, override, setTheme } = useTheme();
   const { t } = useLang();
   const insets = useSafeAreaInsets();
@@ -99,6 +99,16 @@ export default function ProfileScreen({ navigation }) {
         setAgeVal(String(res.data.data.age ?? ''));
       }
     }).catch(() => {});
+  }, []);
+
+  // Save new PIN if returning from PinSetup flow
+  useEffect(() => {
+    const newPin = navigation.getState?.()?.routes?.slice(-1)[0]?.params?.pin;
+    if (newPin) {
+      savePin(newPin).then(() => {
+        Alert.alert(t.saved, 'Your PIN has been updated.');
+      });
+    }
   }, []);
 
   const originalAge    = String(user?.age ?? '');
@@ -252,7 +262,7 @@ export default function ProfileScreen({ navigation }) {
           <Row label={t.personalSettings} value={t.change}                            onPress={() => navigation.navigate('PersonalSettings')}                theme={theme} />
           <Row label={t.appearance}       value={themeLabel}                          onPress={cycleTheme}                                  theme={theme} />
           <Row label={t.language}         value={`${currentLang.flag} ${currentLang.label}`} onPress={() => navigation.navigate('Language')} theme={theme} />
-          <Row label={t.pin}              value={t.change}                            onPress={() => navigation.navigate('PinSetup')}       theme={theme} />
+          <Row label={t.pin}              value={t.change}                            onPress={() => navigation.navigate('PinSetup', { returnTo: 'Profile' })}  theme={theme} />
           <Row label={t.termsConditions}  value={t.view}                              onPress={() => {}}                                    theme={theme} />
           <Row label={t.about}            value={t.readMore}                          onPress={() => {}}                                    theme={theme} last />
         </View>
