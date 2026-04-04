@@ -180,8 +180,8 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
                     {!!(existingLog && existingLog.note && existingLog.note.trim().length > 0) && (
                       <View style={cal.noteIcon}>
                         <Svg width="18" height="18" viewBox="0 0 24 24">
-                          <Circle cx="12" cy="12" r="10" fill="none" stroke="#7AABDB" strokeWidth="2.5"/>
-                          <Path d="M7 8 Q7 6 9 6 L15 6 Q17 6 17 8 L17 14 Q17 16 15 16 L13.5 16 L15.5 19.5 L11.5 16 L9 16 Q7 16 7 14 Z" fill="#7AABDB"/>
+                          <Circle cx="12" cy="12" r="10" fill="none" stroke="#4a7ab5" strokeWidth="2.5"/>
+                          <Path d="M7 8 Q7 6 9 6 L15 6 Q17 6 17 8 L17 14 Q17 16 15 16 L13.5 16 L15.5 19.5 L11.5 16 L9 16 Q7 16 7 14 Z" fill="#4a7ab5"/>
                         </Svg>
                       </View>
                     )}
