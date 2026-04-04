@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LangContext';
 import { Spacing, FontSize, Radius } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 // 5 = best (green), 1 = worst (red) — matching actual stored data
 const SCORE_COLORS = {
@@ -149,8 +150,7 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
               const score       = scoreMap[dateStr];
               const isToday     = dateStr === today;
               const existingLog = logs.find((l) => l.date === dateStr) ?? null;
-              const invertedScore = score ? (6 - score) : undefined;
-              const bgColor     = invertedScore ? SCORE_COLORS[invertedScore] : undefined;
+              const bgColor     = score ? SCORE_COLORS[score] : undefined;
               return (
                 <TouchableOpacity
                   key={dateStr}
@@ -176,6 +176,14 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
                         style={cal.medIcon}
                         resizeMode="contain"
                       />
+                    )}
+                    {!!(existingLog && existingLog.note && existingLog.note.trim().length > 0) && (
+                      <View style={cal.noteIcon}>
+                        <Svg width="14" height="14" viewBox="0 0 24 24">
+                          <Circle cx="12" cy="12" r="10" fill="none" stroke="#4a7ab5" strokeWidth="2.5"/>
+                          <Path d="M7 8 Q7 6 9 6 L15 6 Q17 6 17 8 L17 14 Q17 16 15 16 L13.5 16 L15.5 19.5 L11.5 16 L9 16 Q7 16 7 14 Z" fill="#4a7ab5"/>
+                        </Svg>
+                      </View>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -248,9 +256,10 @@ const cal = StyleSheet.create({
   weekdayLabel:{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700' },
   grid:        { flexDirection: 'row', flexWrap: 'wrap', padding: 2 },
   cell:        { width: `${100 / 7}%`, aspectRatio: 1, padding: 3 },
-  cellInner:   { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: '#e0e7ef' },
+  cellInner:   { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: '#e0e7ef', overflow: 'visible' },
   cellText:    { fontSize: 13, fontWeight: '600' },
-  medIcon:     { position: 'absolute', top: 1, right: 1, width: 12, height: 12 },
+  medIcon:     { position: 'absolute', top: -4, right: -4, width: 16, height: 16 },
+  noteIcon:    { position: 'absolute', bottom: -4, right: -4, width: 14, height: 14 },
   legendRow:   { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 16, marginBottom: 12, flexWrap: 'wrap', gap: 4 },
   legendItem:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot:   { width: 10, height: 10, borderRadius: 5 },

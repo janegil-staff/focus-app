@@ -247,7 +247,7 @@ export default function LogEntryScreen({ navigation, route }) {
       if (tasks       != null) payload.tasksCompleted = tasks;
       payload.medicationTaken = tookMed;
       payload.medicationNames = tookMed ? selectedMeds : [];
-      if (note.trim())         payload.note           = note.trim();
+      payload.note = note.trim(); // always send note, even if empty string
 
       await saveLog(payload);
       navigation.goBack();
