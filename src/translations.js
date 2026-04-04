@@ -115,6 +115,8 @@ const LANG_MAP = {
     // Calendar
     calendar:         'Calendar',
     diary:            'Diary',
+    dayView:          'Day',
+    monthView:        'Month',
     monthSummary:     'Month summary',
     daysLoggedShort:  'Days logged',
     avgScore:         'Avg. score',
@@ -354,7 +356,7 @@ const LANG_MAP = {
     scoreBest: '1 = Bäst', scoreWorst: '5 = Sämst',
 
     calendar: 'Kalender',
-    diary: 'Dagbok', monthSummary: 'Månadssammanfattning',
+    diary: 'Dagbok', dayView: 'Dag', monthView: 'Månad', monthSummary: 'Månadssammanfattning',
     daysLoggedShort: 'Dagar loggade', avgScore: 'Snittpoäng', missing: 'Saknas',
     scoreBreakdown: 'Poängfördelning',
     scoreVeryLow: 'Mycket låg', scoreLow: 'Låg', scoreModerate: 'Medel',

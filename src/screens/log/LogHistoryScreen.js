@@ -11,7 +11,7 @@ import { Spacing, FontSize, Radius } from '../../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-// 5 = best (green), 1 = worst (red) — matching actual stored data
+// 5 = best (green), 1 = worst (red)
 const SCORE_COLORS = {
   1: '#EF4444',
   2: '#FB923C',
@@ -39,7 +39,7 @@ function toDateStr(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-// ── Score badge for diary list ─────────────────────────────────────────────────
+// ── Score badge ────────────────────────────────────────────────────────────────
 function ScoreBadge({ score, size = 28 }) {
   if (!score) return <View style={{ width: size, height: size }} />;
   const color = SCORE_COLORS[score];
@@ -96,7 +96,6 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
     ? Math.round(monthLogs.reduce((s, l) => s + (avgScore(l) ?? 0), 0) / totalLogged)
     : null;
 
-  // scoreLabels[0] = score 1 = worst = red = Very low
   const scoreLabels = [
     t.scoreVeryLow   ?? 'Very low',
     t.scoreLow       ?? 'Low',
@@ -193,7 +192,6 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
         )}
       </View>
 
-      {/* Legend: score 1=red on left, score 5=green on right */}
       <View style={cal.legendRow}>
         {[1, 2, 3, 4, 5].map((s) => (
           <View key={s} style={cal.legendItem}>
@@ -277,9 +275,97 @@ const cal = StyleSheet.create({
   breakdownCount:  { fontSize: 12, fontWeight: '600', width: 24, textAlign: 'right' },
 });
 
+// ── Month view (diary grouped by month) ───────────────────────────────────────
+function MonthView({ logs, navigation, t, theme, PRIMARY, formatDate }) {
+  const NAVY = '#2d4a6e';
+  const MUTED = '#8fa8c8';
+  const months = t.months ?? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const grouped = {};
+  logs.forEach((log) => {
+    const key = log.date.slice(0, 7);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(log);
+  });
+
+  const sections = Object.keys(grouped).sort((a, b) => b.localeCompare(a)).map((key) => {
+    const [y, m] = key.split('-').map(Number);
+    const monthLogs = grouped[key];
+    const scores = monthLogs.map(l => avgScore(l)).filter(Boolean);
+    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    return { key, year: y, month: m - 1, logs: monthLogs, avg };
+  });
+
+  return (
+    <FlatList
+      data={sections}
+      keyExtractor={(item) => item.key}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => (
+        <View style={{
+          backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, overflow: 'hidden',
+          shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
+        }}>
+          <View style={{ backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+              {months[item.month]} {item.year}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {item.avg ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: SCORE_COLORS[item.avg] }} /> : null}
+              <Text style={{ color: '#fff', fontSize: 12 }}>{item.logs.length} {t.daysLoggedShort ?? 'days'}</Text>
+            </View>
+          </View>
+          {item.logs.map((log, idx) => {
+            const score = avgScore(log);
+            return (
+              <TouchableOpacity
+                key={log.date}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 16, paddingVertical: 10,
+                  borderBottomWidth: idx < item.logs.length - 1 ? 1 : 0,
+                  borderBottomColor: '#e8eef5', gap: 10,
+                }}
+                onPress={() => navigation.navigate('LogEntry', { date: log.date, log })}
+              >
+                <View style={{
+                  width: 36, height: 36, borderRadius: 18, borderWidth: 2,
+                  borderColor: score ? SCORE_COLORS[score] : '#e0e7ef',
+                  backgroundColor: score ? SCORE_COLORS[score] + '20' : 'transparent',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {score
+                    ? <Text style={{ color: SCORE_COLORS[score], fontSize: 13, fontWeight: '800' }}>{score}</Text>
+                    : <Text style={{ color: MUTED, fontSize: 13 }}>—</Text>
+                  }
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>{formatDate(log.date)}</Text>
+                  <View style={{ flexDirection: 'row', marginTop: 2, gap: 4 }}>
+                    <ScoreBadge score={log.mood}        size={18} />
+                    <ScoreBadge score={log.focus}       size={18} />
+                    <ScoreBadge score={log.sleep}       size={18} />
+                    <ScoreBadge score={log.energy}      size={18} />
+                    <ScoreBadge score={log.impulsivity} size={18} />
+                    {log.medicationTaken && <Text style={{ fontSize: 12 }}>💊</Text>}
+                    {log.note?.trim() ? <Text style={{ fontSize: 12 }}>📝</Text> : null}
+                  </View>
+                </View>
+                <Text style={{ color: MUTED, fontSize: 18 }}>›</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    />
+  );
+}
+
 // ── Main screen ────────────────────────────────────────────────────────────────
 export default function LogHistoryScreen({ navigation, route }) {
-  const [activeTab, setActiveTab] = useState(route?.params?.initialTab ?? 'calendar');
+  const [activeTab,  setActiveTab]  = useState(route?.params?.initialTab ?? 'calendar');
+  const [diaryView,  setDiaryView]  = useState('day');
   const { logs, loading, fetchLogs } = useLogs();
   const { theme } = useTheme();
   const { t }     = useLang();
@@ -298,6 +384,7 @@ export default function LogHistoryScreen({ navigation, route }) {
   return (
     <View style={[s.root, { backgroundColor: theme.bgSecondary ?? '#F0F4F8' }]}>
 
+      {/* Blue header */}
       <View style={[s.header, { backgroundColor: PRIMARY, paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
           <Text style={s.back}>‹</Text>
@@ -306,6 +393,7 @@ export default function LogHistoryScreen({ navigation, route }) {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Calendar / Diary tab buttons */}
       <View style={s.tabBar}>
         {['calendar', 'diary'].map((tab) => {
           const isActive = activeTab === tab;
@@ -334,6 +422,7 @@ export default function LogHistoryScreen({ navigation, route }) {
         })}
       </View>
 
+      {/* Calendar tab content */}
       {activeTab === 'calendar' && (
         <FlatList
           data={[]}
@@ -346,51 +435,97 @@ export default function LogHistoryScreen({ navigation, route }) {
         />
       )}
 
+      {/* Diary tab content */}
       {activeTab === 'diary' && (
-        <FlatList
-          data={logs}
-          keyExtractor={(item) => item.date}
-          contentContainerStyle={s.list}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={s.empty}>
-              <Text style={[s.emptyText, { color: theme.textMuted }]}>{t.noLogs ?? 'No logs yet'}</Text>
-            </View>
-          }
-          renderItem={({ item }) => {
-            const score = avgScore(item);
-            return (
-              <TouchableOpacity
-                style={[s.row, { backgroundColor: theme.card ?? '#fff', borderColor: theme.border }]}
-                onPress={() => navigation.navigate('LogEntry', { date: item.date, log: item })}
-              >
-                <View style={[
-                  s.scoreRing,
-                  score && { borderColor: SCORE_COLORS[score], backgroundColor: SCORE_COLORS[score] + '20' },
-                ]}>
-                  {score
-                    ? <Text style={[s.scoreRingText, { color: SCORE_COLORS[score] }]}>{score}</Text>
-                    : <Text style={[s.scoreRingText, { color: theme.textMuted }]}>—</Text>
-                  }
+        <View style={{ flex: 1 }}>
+
+          {/* Day / Month sub-buttons */}
+          <View style={s.subTabBar}>
+            {['day', 'month'].map((v) => {
+              const isActive = diaryView === v;
+              const label = v === 'day' ? (t.dayView ?? 'Day') : (t.monthView ?? 'Month');
+              return (
+                <TouchableOpacity
+                  key={v}
+                  style={[s.subTab, isActive && {
+                backgroundColor: '#fff',
+                shadowColor: '#000',
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 1 },
+                elevation: 2,
+              }]}
+                  onPress={() => setDiaryView(v)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[s.subTabText, isActive && { color: '#4a6a8a', fontWeight: '600' }]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Day view */}
+          {diaryView === 'day' && (
+            <FlatList
+              data={logs}
+              keyExtractor={(item) => item.date}
+              contentContainerStyle={s.list}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={s.empty}>
+                  <Text style={[s.emptyText, { color: theme.textMuted }]}>{t.noLogs ?? 'No logs yet'}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.rowDate, { color: theme.text }]}>{formatDate(item.date)}</Text>
-                  <View style={{ flexDirection: 'row', marginTop: 3, gap: 6 }}>
-                    <ScoreBadge score={item.mood}        size={22} />
-                    <ScoreBadge score={item.focus}       size={22} />
-                    <ScoreBadge score={item.sleep}       size={22} />
-                    <ScoreBadge score={item.energy}      size={22} />
-                    <ScoreBadge score={item.impulsivity} size={22} />
-                    {item.medicationTaken && <Text style={{ fontSize: 14 }}>💊</Text>}
-                    {item.note            && <Text style={{ fontSize: 14 }}>📝</Text>}
-                  </View>
-                </View>
-                <Text style={[s.chevron, { color: theme.textMuted }]}>›</Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+              }
+              renderItem={({ item }) => {
+                const score = avgScore(item);
+                return (
+                  <TouchableOpacity
+                    style={[s.row, { backgroundColor: theme.card ?? '#fff', borderColor: theme.border }]}
+                    onPress={() => navigation.navigate('LogEntry', { date: item.date, log: item })}
+                  >
+                    <View style={[
+                      s.scoreRing,
+                      score && { borderColor: SCORE_COLORS[score], backgroundColor: SCORE_COLORS[score] + '20' },
+                    ]}>
+                      {score
+                        ? <Text style={[s.scoreRingText, { color: SCORE_COLORS[score] }]}>{score}</Text>
+                        : <Text style={[s.scoreRingText, { color: theme.textMuted }]}>—</Text>
+                      }
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.rowDate, { color: theme.text }]}>{formatDate(item.date)}</Text>
+                      <View style={{ flexDirection: 'row', marginTop: 3, gap: 6 }}>
+                        <ScoreBadge score={item.mood}        size={22} />
+                        <ScoreBadge score={item.focus}       size={22} />
+                        <ScoreBadge score={item.sleep}       size={22} />
+                        <ScoreBadge score={item.energy}      size={22} />
+                        <ScoreBadge score={item.impulsivity} size={22} />
+                        {item.medicationTaken && <Text style={{ fontSize: 14 }}>💊</Text>}
+                        {item.note?.trim() ? <Text style={{ fontSize: 14 }}>📝</Text> : null}
+                      </View>
+                    </View>
+                    <Text style={[s.chevron, { color: theme.textMuted }]}>›</Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+
+          {/* Month view */}
+          {diaryView === 'month' && (
+            <MonthView
+              logs={logs}
+              navigation={navigation}
+              t={t}
+              theme={theme}
+              PRIMARY={PRIMARY}
+              formatDate={formatDate}
+            />
+          )}
+
+        </View>
       )}
+
     </View>
   );
 }
@@ -418,6 +553,21 @@ const makeStyles = (t, insets) => StyleSheet.create({
   tabGradient:   { width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 16 },
   tabText:       { color: t.textMuted ?? '#8fa8c8', fontSize: FontSize.sm, fontWeight: '600' },
   tabTextActive: { color: '#fff', fontWeight: '700' },
+
+  subTabBar: {
+    flexDirection: 'row', paddingHorizontal: 4, paddingVertical: 4, gap: 0,
+    backgroundColor: '#dde8f0',
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginVertical: 10,
+  },
+  subTab: {
+    flex: 1, paddingVertical: 10, borderRadius: 8,
+    alignItems: 'center', borderWidth: 0,
+    backgroundColor: '#dde8f0',
+  },
+  subTabText: { fontSize: FontSize.sm, fontWeight: '500', color: '#6b8aaa' },
+
   list:  { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: 40 },
   row: {
     flexDirection: 'row', alignItems: 'center',
