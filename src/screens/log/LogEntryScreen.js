@@ -212,6 +212,9 @@ export default function LogEntryScreen({ navigation, route }) {
 
   // IDs of meds the user has saved in their profile
   const userMedIds = user?.medications ?? [];
+  console.log('[LogEntry] user.medications:', JSON.stringify(user?.medications));
+  console.log('[LogEntry] userMedIds:', JSON.stringify(userMedIds));
+  console.log('[LogEntry] full user keys:', Object.keys(user ?? {}));
 
   const toggleMed = (id) =>
     setSelectedMeds((prev) =>
