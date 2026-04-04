@@ -179,9 +179,9 @@ function CalendarTab({ logs, loading, navigation, t, theme }) {
                     )}
                     {!!(existingLog && existingLog.note && existingLog.note.trim().length > 0) && (
                       <View style={cal.noteIcon}>
-                        <Svg width="14" height="14" viewBox="0 0 24 24">
-                          <Circle cx="12" cy="12" r="10" fill="none" stroke="#4a7ab5" strokeWidth="2.5"/>
-                          <Path d="M7 8 Q7 6 9 6 L15 6 Q17 6 17 8 L17 14 Q17 16 15 16 L13.5 16 L15.5 19.5 L11.5 16 L9 16 Q7 16 7 14 Z" fill="#4a7ab5"/>
+                        <Svg width="18" height="18" viewBox="0 0 24 24">
+                          <Circle cx="12" cy="12" r="10" fill="none" stroke="#7AABDB" strokeWidth="2.5"/>
+                          <Path d="M7 8 Q7 6 9 6 L15 6 Q17 6 17 8 L17 14 Q17 16 15 16 L13.5 16 L15.5 19.5 L11.5 16 L9 16 Q7 16 7 14 Z" fill="#7AABDB"/>
                         </Svg>
                       </View>
                     )}
@@ -258,8 +258,8 @@ const cal = StyleSheet.create({
   cell:        { width: `${100 / 7}%`, aspectRatio: 1, padding: 3 },
   cellInner:   { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: '#e0e7ef', overflow: 'visible' },
   cellText:    { fontSize: 13, fontWeight: '600' },
-  medIcon:     { position: 'absolute', top: -4, right: -4, width: 16, height: 16 },
-  noteIcon:    { position: 'absolute', bottom: -4, right: -4, width: 14, height: 14 },
+  medIcon:     { position: 'absolute', top: -6, right: -6, width: 20, height: 20 },
+  noteIcon:    { position: 'absolute', bottom: -6, right: -6, width: 18, height: 18 },
   legendRow:   { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 16, marginBottom: 12, flexWrap: 'wrap', gap: 4 },
   legendItem:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot:   { width: 10, height: 10, borderRadius: 5 },
