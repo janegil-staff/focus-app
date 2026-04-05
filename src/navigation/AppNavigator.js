@@ -21,6 +21,7 @@ import ProfileScreen          from '../screens/profile/ProfileScreen';
 import LanguageScreen         from '../screens/profile/LanguageScreen';
 import PersonalSettingsScreen from '../screens/profile/PersonalSettingsScreen';
 import MedicationsScreen      from '../screens/medications/MedicationsScreen';
+import ShareScreen            from '../screens/share/ShareScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ function AppStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home"             component={HomeScreen} />
       <Stack.Screen name="Welcome"          component={WelcomeScreen} />
+      <Stack.Screen name="Share"            component={ShareScreen} />
       <Stack.Screen name="LogEntry"         component={LogEntryScreen} />
       <Stack.Screen name="LogHistory"       component={LogHistoryScreen} />
       <Stack.Screen name="Profile"          component={ProfileScreen} />
