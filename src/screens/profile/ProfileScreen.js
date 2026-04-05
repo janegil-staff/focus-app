@@ -29,13 +29,9 @@ const ALL_LANGUAGES = [
 function FemaleSvg({ color, size = 48 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      {/* Head */}
       <Circle cx="24" cy="14" r="8" stroke={color} strokeWidth="2" />
-      {/* Hair */}
       <Path d="M16 14 Q16 6 24 6 Q32 6 32 14" stroke={color} strokeWidth="2" fill="none" />
-      {/* Shoulders / body */}
       <Path d="M10 38 C10 28 38 28 38 38" stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* Dress shape */}
       <Path d="M17 26 L14 38 M31 26 L34 38" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </Svg>
   );
@@ -44,11 +40,8 @@ function FemaleSvg({ color, size = 48 }) {
 function MaleSvg({ color, size = 48 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      {/* Head */}
       <Circle cx="24" cy="14" r="8" stroke={color} strokeWidth="2" />
-      {/* Shoulders */}
       <Path d="M10 38 C10 28 38 28 38 38" stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* Shirt collar */}
       <Path d="M20 26 L24 30 L28 26" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </Svg>
   );
@@ -57,9 +50,27 @@ function MaleSvg({ color, size = 48 }) {
 function UndefinedSvg({ color, size = 48 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <Text style={{ color, fontSize: 28, textAlign: 'center' }}>?</Text>
       <Path d="M20 18 C20 14 28 14 28 19 C28 22 24 23 24 26" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none" />
       <Circle cx="24" cy="31" r="1.5" fill={color} />
+    </Svg>
+  );
+}
+
+// ── Logout icon — box with arrow exiting ──────────────────────────────────────
+function LogoutIcon({ color = '#fff', size = 24 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Door/box */}
+      <Path
+        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+        stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      />
+      {/* Arrow pointing right */}
+      <Path
+        d="M16 17l5-5-5-5"
+        stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      />
+      <Line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -101,7 +112,6 @@ export default function ProfileScreen({ navigation }) {
     }).catch(() => {});
   }, []);
 
-  // Save new PIN if returning from PinSetup flow
   useEffect(() => {
     const newPin = navigation.getState?.()?.routes?.slice(-1)[0]?.params?.pin;
     if (newPin) {
@@ -169,7 +179,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <View style={s.root}>
 
-      {/* Header — horizontal gradient */}
+      {/* Header */}
       <LinearGradient
         colors={[theme.accent, theme.accentDark ?? '#2D4A6E']}
         start={{ x: 0, y: 0.5 }}
@@ -180,14 +190,15 @@ export default function ProfileScreen({ navigation }) {
           <Text style={s.headerBack}>‹</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>{t.settings}</Text>
+        {/* Logout icon — box with arrow */}
         <TouchableOpacity style={s.headerBtn} onPress={handleLogout}>
-          <Text style={s.headerLogout}>⎋</Text>
+          <LogoutIcon color="#fff" size={22} />
         </TouchableOpacity>
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 50 }} showsVerticalScrollIndicator={false}>
 
-        {/* ── Gender ── */}
+        {/* Gender */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>{t.chooseGender}</Text>
           <View style={s.genderRow}>
@@ -208,7 +219,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={s.divider} />
 
-        {/* ── Age ── */}
+        {/* Age + Email */}
         <View style={s.section}>
           <View style={s.fieldWrap}>
             <Text style={s.fieldLabel}>{t.age}</Text>
@@ -224,7 +235,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
           <View style={s.fieldLine} />
 
-          {/* ── Email ── */}
           <View style={s.fieldRowWrap}>
             <View>
               <Text style={s.fieldLabel}>{t.email}</Text>
@@ -237,7 +247,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={s.fieldLine} />
         </View>
 
-        {/* ── Email warning banner ── */}
+        {/* Email warning */}
         {!emailVerified && (
           <View style={s.warningBanner}>
             <View style={s.warningLeft}>
@@ -257,19 +267,19 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={s.divider} />
 
-        {/* ── Settings rows ── */}
+        {/* Settings rows */}
         <View style={s.section}>
-          <Row label={t.personalSettings} value={t.change}                            onPress={() => navigation.navigate('PersonalSettings')}                theme={theme} />
-          <Row label={t.appearance}       value={themeLabel}                          onPress={cycleTheme}                                  theme={theme} />
-          <Row label={t.language}         value={`${currentLang.flag} ${currentLang.label}`} onPress={() => navigation.navigate('Language')} theme={theme} />
-          <Row label={t.pin}              value={t.change}                            onPress={() => navigation.navigate('PinSetup', { returnTo: 'Profile' })}  theme={theme} />
-          <Row label={t.termsConditions}  value={t.view}                              onPress={() => {}}                                    theme={theme} />
-          <Row label={t.about}            value={t.readMore}                          onPress={() => {}}                                    theme={theme} last />
+          <Row label={t.personalSettings} value={t.change}                                   onPress={() => navigation.navigate('PersonalSettings')}               theme={theme} />
+          <Row label={t.appearance}       value={themeLabel}                                  onPress={cycleTheme}                                                   theme={theme} />
+          <Row label={t.language}         value={`${currentLang.flag} ${currentLang.label}`} onPress={() => navigation.navigate('Language')}                        theme={theme} />
+          <Row label={t.pin}              value={t.change}                                    onPress={() => navigation.navigate('PinSetup', { returnTo: 'Profile' })} theme={theme} />
+          <Row label={t.termsConditions}  value={t.view}                                      onPress={() => {}}                                                     theme={theme} />
+          <Row label={t.about}            value={t.readMore}                                  onPress={() => {}}                                                     theme={theme} last />
         </View>
 
         <View style={s.divider} />
 
-        {/* ── Sign out ── */}
+        {/* Sign out */}
         <View style={s.section}>
           <TouchableOpacity style={s.signOutRow} onPress={handleLogout}>
             <Text style={s.signOutText}>{t.signOut}</Text>
@@ -308,7 +318,6 @@ function Row({ label, value, onPress, theme, last }) {
 const makeStyles = (t, insets) => StyleSheet.create({
   root: { flex: 1, backgroundColor: t.bgSecondary ?? '#F0F4F8' },
 
-  // Header
   header: {
     paddingTop: insets.top + Spacing.sm,
     paddingBottom: Spacing.lg,
@@ -316,22 +325,16 @@ const makeStyles = (t, insets) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerBtn:    { width: 40 },
+  headerBtn:    { width: 40, alignItems: 'flex-end' },
   headerBack:   { color: '#FFFFFF', fontSize: 28, lineHeight: 34 },
-  headerLogout: { color: '#FFFFFF', fontSize: 22, textAlign: 'right' },
   headerTitle:  { flex: 1, color: '#FFFFFF', fontSize: FontSize.lg, fontWeight: '600', textAlign: 'center' },
 
   divider: { height: Spacing.md, backgroundColor: t.bgSecondary ?? '#F0F4F8' },
   section: { backgroundColor: t.bg ?? '#FFFFFF' },
 
-  // Gender
   sectionTitle: {
-    color: t.text,
-    fontSize: FontSize.md,
-    fontWeight: '500',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    color: t.text, fontSize: FontSize.md, fontWeight: '500',
+    paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
   },
   genderRow:  { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
   genderItem: { alignItems: 'center', gap: 8 },
@@ -344,7 +347,6 @@ const makeStyles = (t, insets) => StyleSheet.create({
   genderLabel:        { color: t.textSecondary, fontSize: FontSize.md },
   genderLabelActive:  { color: t.text, fontWeight: '700' },
 
-  // Fields
   fieldWrap:    { paddingHorizontal: Spacing.lg, paddingTop: 14, paddingBottom: 0 },
   fieldLabel:   { color: t.textMuted, fontSize: FontSize.sm, marginBottom: 2 },
   fieldInput:   { color: t.text, fontSize: FontSize.lg, fontWeight: '500', paddingBottom: 10, paddingHorizontal: 0 },
@@ -353,28 +355,20 @@ const makeStyles = (t, insets) => StyleSheet.create({
   fieldLine:    { height: 1, backgroundColor: t.border, marginHorizontal: Spacing.lg },
   fieldChange:  { color: t.textMuted, fontSize: FontSize.md },
 
-  // Warning banner
   warningBanner: {
-    marginHorizontal: Spacing.lg,
-    marginVertical: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: '#E53935',
-    borderRadius: Radius.md,
-    backgroundColor: '#FFF5F5',
-    padding: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg, marginVertical: Spacing.md,
+    borderWidth: 1.5, borderColor: '#E53935', borderRadius: Radius.md,
+    backgroundColor: '#FFF5F5', padding: Spacing.md,
+    flexDirection: 'row', alignItems: 'flex-start',
+    justifyContent: 'space-between', gap: Spacing.sm,
   },
-  warningLeft:       { flexDirection: 'row', flex: 1, gap: Spacing.sm, alignItems: 'flex-start' },
-  warningTextWrap:   { flex: 1 },
-  warningTitle:      { color: '#E53935', fontSize: FontSize.sm, fontWeight: '700', marginBottom: 4 },
-  warningBody:       { color: '#555', fontSize: FontSize.xs, lineHeight: 18 },
-  warningConfirm:    { justifyContent: 'center', paddingLeft: Spacing.sm },
-  warningConfirmText:{ color: t.accent, fontSize: FontSize.sm, fontWeight: '600' },
+  warningLeft:        { flexDirection: 'row', flex: 1, gap: Spacing.sm, alignItems: 'flex-start' },
+  warningTextWrap:    { flex: 1 },
+  warningTitle:       { color: '#E53935', fontSize: FontSize.sm, fontWeight: '700', marginBottom: 4 },
+  warningBody:        { color: '#555', fontSize: FontSize.xs, lineHeight: 18 },
+  warningConfirm:     { justifyContent: 'center', paddingLeft: Spacing.sm },
+  warningConfirmText: { color: t.accent, fontSize: FontSize.sm, fontWeight: '600' },
 
-  // Sign out
   signOutRow:  { paddingVertical: 15, paddingHorizontal: Spacing.lg },
   signOutText: { color: t.accent, fontSize: FontSize.md, fontWeight: '500' },
   clearText:   { color: '#EF4444', fontSize: FontSize.md },
