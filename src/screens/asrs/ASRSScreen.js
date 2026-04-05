@@ -7,11 +7,12 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Animated,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
+import { useLang } from "../../context/LangContext";
 import { Spacing, FontSize } from "../../theme";
 import client from "../../api/client";
 
@@ -24,7 +25,6 @@ const OPTIONS = [
 ];
 
 const QUESTIONS = [
-  // Part A (screening) — Q1–6
   {
     id: 1,
     part: "A",
@@ -55,7 +55,6 @@ const QUESTIONS = [
     part: "A",
     text: "How often do you feel overly active and compelled to do things, like you were driven by a motor?",
   },
-  // Part B — Q7–18
   {
     id: 7,
     part: "B",
@@ -100,7 +99,7 @@ const QUESTIONS = [
   {
     id: 16,
     part: "B",
-    text: "When you're in a conversation, how often do you find yourself finishing the sentences of the people you are talking to?",
+    text: "How often do you find yourself finishing the sentences of the people you are talking to?",
   },
   {
     id: 17,
@@ -114,36 +113,47 @@ const QUESTIONS = [
   },
 ];
 
-function getInterpretation(scoreA, scoreTotal) {
+function getInterpretation(scoreA, t) {
   if (scoreA >= 14)
     return {
       level: "high",
-      title: "Highly consistent with ADHD",
-      text: "Your Part A score suggests symptoms highly consistent with ADHD in adults. Consider discussing these results with a healthcare professional.",
+      title: t.asrsHighTitle ?? "Highly consistent with ADHD",
+      text:
+        t.asrsHighBody ??
+        "Your Part A score suggests symptoms highly consistent with ADHD in adults. Consider discussing these results with a healthcare professional.",
       color: "#EF4444",
+      icon: "alert-circle",
     };
   if (scoreA >= 9)
     return {
       level: "moderate",
-      title: "Moderately consistent with ADHD",
-      text: "Your scores suggest some symptoms consistent with ADHD. A healthcare professional can help clarify further.",
+      title: t.asrsModTitle ?? "Moderately consistent with ADHD",
+      text:
+        t.asrsModBody ??
+        "Your scores suggest some symptoms consistent with ADHD. A healthcare professional can help clarify further.",
       color: "#FB923C",
+      icon: "warning",
     };
   return {
     level: "low",
-    title: "Not strongly consistent with ADHD",
-    text: "Your current scores do not strongly indicate ADHD symptoms. Continue tracking over time for a fuller picture.",
+    title: t.asrsLowTitle ?? "Not strongly consistent with ADHD",
+    text:
+      t.asrsLowBody ??
+      "Your current scores do not strongly indicate ADHD symptoms. Continue tracking over time for a fuller picture.",
     color: "#22C55E",
+    icon: "checkmark-circle",
   };
 }
 
 export default function ASRSScreen() {
   const { theme } = useTheme();
-  const [step, setStep] = useState("intro"); // intro | questions | result
+  const { t } = useLang();
+  const scrollRef = useRef(null);
+
+  const [step, setStep] = useState("intro");
   const [answers, setAnswers] = useState({});
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
-  const scrollRef = useRef(null);
 
   const s = makeStyles(theme);
 
@@ -152,13 +162,11 @@ export default function ASRSScreen() {
   };
 
   const allAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const answeredCount = Object.keys(answers).length;
 
   const submit = async () => {
     if (!allAnswered) {
-      Alert.alert(
-        "Not complete",
-        "Please answer all 18 questions before submitting.",
-      );
+      Alert.alert("Not complete", `${18 - answeredCount} questions remaining.`);
       return;
     }
     const scoreA = QUESTIONS.filter((q) => q.part === "A").reduce(
@@ -166,7 +174,7 @@ export default function ASRSScreen() {
       0,
     );
     const scoreTotal = QUESTIONS.reduce((s, q) => s + answers[q.id], 0);
-    const interp = getInterpretation(scoreA, scoreTotal);
+    const interp = getInterpretation(scoreA, t);
 
     setSaving(true);
     try {
@@ -187,71 +195,133 @@ export default function ASRSScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  // ── Intro ──────────────────────────────────────────────────────────────────
+  const reset = () => {
+    setAnswers({});
+    setResult(null);
+    setStep("intro");
+  };
+
+  // ── INTRO ──────────────────────────────────────────────────────────────────
   if (step === "intro") {
     return (
       <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={s.introContainer}>
-          <View style={s.introIcon}>
-            <Ionicons name="clipboard" size={48} color={theme.accent} />
-          </View>
-          <Text style={s.introTitle}>ASRS-v1.1</Text>
-          <Text style={s.introSubtitle}>Adult ADHD Self-Report Scale</Text>
-          <Text style={s.introBody}>
-            This is the WHO-endorsed screening tool for adult ADHD. It takes
-            about 5 minutes to complete and consists of 18 questions about how
-            you have felt and conducted yourself over the past 6 months.
+        <ScrollView
+          contentContainerStyle={s.introContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Title */}
+          <Text style={s.introTitle}>{t.asrsTitle ?? "ASRS-v1.1"}</Text>
+          <Text style={s.introSubtitle}>
+            {t.asrsSubtitle ?? "Adult ADHD Self-Report Scale"}
           </Text>
 
-          <View style={s.infoCard}>
-            <View style={s.infoRow}>
+          {/* What is it */}
+          <View style={s.infoBlock}>
+            <View style={s.infoBlockHeader}>
               <Ionicons
-                name="help-circle-outline"
+                name="information-circle"
                 size={20}
                 color={theme.accent}
               />
-              <Text style={s.infoText}>18 questions in 2 parts</Text>
+              <Text style={s.infoHeading}>What is ASRS?</Text>
             </View>
-            <View style={s.infoRow}>
-              <Ionicons name="time-outline" size={20} color={theme.accent} />
-              <Text style={s.infoText}>Takes about 5 minutes</Text>
+            <Text style={s.infoBody}>
+              The Adult ADHD Self-Report Scale (ASRS-v1.1) is the official
+              WHO-endorsed screening tool for ADHD in adults. It was developed
+              in collaboration with the World Health Organization and is used by
+              clinicians worldwide.
+            </Text>
+          </View>
+
+          {/* Why it matters */}
+          <View style={s.infoBlock}>
+            <View style={s.infoBlockHeader}>
+              <Ionicons name="heart" size={20} color={theme.accent} />
+              <Text style={s.infoHeading}>Why does it matter?</Text>
             </View>
-            <View style={s.infoRow}>
-              <Ionicons
-                name="bar-chart-outline"
-                size={20}
-                color={theme.accent}
-              />
-              <Text style={s.infoText}>Results saved to your history</Text>
+            <Text style={s.infoBody}>
+              ADHD often goes unrecognized in adults. Regular self-assessments
+              help you and your doctor track symptom patterns over time, measure
+              whether treatment is working, and have more informed conversations
+              at appointments.
+            </Text>
+          </View>
+
+          {/* How it works */}
+          <View style={s.infoBlock}>
+            <View style={s.infoBlockHeader}>
+              <Ionicons name="clipboard" size={20} color={theme.accent} />
+              <Text style={s.infoHeading}>How does it work?</Text>
             </View>
-            <View style={s.infoRow}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={20}
-                color={theme.accent}
-              />
-              <Text style={s.infoText}>Not a clinical diagnosis</Text>
+            <Text style={s.infoBody}>
+              You answer 18 questions about how often you experience specific
+              ADHD-related symptoms. Part A (6 questions) is the clinical
+              screener — a score of 14 or higher is considered significant. Part
+              B (12 questions) gives a fuller picture of your symptom profile.
+            </Text>
+          </View>
+
+          {/* Stat chips */}
+          <View style={s.chipsRow}>
+            <View style={s.chip}>
+              <Text style={s.chipValue}>18</Text>
+              <Text style={s.chipLabel}>Questions</Text>
+            </View>
+            <View style={s.chip}>
+              <Text style={s.chipValue}>5 min</Text>
+              <Text style={s.chipLabel}>To complete</Text>
+            </View>
+            <View style={s.chip}>
+              <Text style={s.chipValue}>WHO</Text>
+              <Text style={s.chipLabel}>Endorsed</Text>
             </View>
           </View>
 
+          {/* Doctor image */}
+          {/* <Image
+            source={require("../../../assets/images/doctor_asrs.png")}
+            style={s.doctorImage}
+            resizeMode="contain"
+          /> */}
+
+          {/* CTA button */}
           <TouchableOpacity
             style={s.startBtn}
             onPress={() => setStep("questions")}
           >
-            <Text style={s.startBtnText}>Start Assessment</Text>
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
+            <Ionicons name="clipboard" size={20} color="#fff" />
+            <Text style={s.startBtnText}>
+              {t.registerAsrsRecord ?? "Register ASRS Record"}
+            </Text>
           </TouchableOpacity>
+
+          <Text style={s.introDisclaimer}>
+            {t.asrsDisclaimer ?? "WHO-endorsed • Not a clinical diagnosis"}
+          </Text>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // ── Result ─────────────────────────────────────────────────────────────────
+  // ── RESULT ─────────────────────────────────────────────────────────────────
   if (step === "result") {
     const { scoreA, scoreTotal, interp } = result;
+    const scoreLabels = [
+      t.asrsNever ?? "Never",
+      t.asrsRarely ?? "Rarely",
+      t.asrsSometimes ?? "Sometimes",
+      t.asrsOften ?? "Often",
+      t.asrsVeryOften ?? "Very Often",
+    ];
+
     return (
       <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScrollView ref={scrollRef} contentContainerStyle={s.resultContainer}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={s.resultContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Badge */}
           <View
             style={[
               s.resultBadge,
@@ -261,47 +331,43 @@ export default function ASRSScreen() {
               },
             ]}
           >
-            <Ionicons
-              name={
-                interp.level === "high"
-                  ? "alert-circle"
-                  : interp.level === "moderate"
-                    ? "warning"
-                    : "checkmark-circle"
-              }
-              size={48}
-              color={interp.color}
-            />
+            <Ionicons name={interp.icon} size={52} color={interp.color} />
           </View>
 
           <Text style={s.resultTitle}>{interp.title}</Text>
           <Text style={s.resultBody}>{interp.text}</Text>
 
-          {/* Scores */}
+          {/* Score cards */}
           <View style={s.scoresRow}>
             <View style={[s.scoreCard, { borderColor: interp.color }]}>
               <Text style={[s.scoreValue, { color: interp.color }]}>
                 {scoreA}
               </Text>
-              <Text style={s.scoreLabel}>Part A score{"\n"}(max 24)</Text>
+              <Text style={s.scoreLabel}>
+                {t.asrsPartAScore ?? "Part A score\n(max 24)"}
+              </Text>
             </View>
             <View style={[s.scoreCard, { borderColor: theme.border }]}>
               <Text style={[s.scoreValue, { color: theme.accent }]}>
                 {scoreTotal}
               </Text>
-              <Text style={s.scoreLabel}>Total score{"\n"}(max 72)</Text>
+              <Text style={s.scoreLabel}>
+                {t.asrsTotalScore ?? "Total score\n(max 72)"}
+              </Text>
             </View>
           </View>
 
-          {/* Part A threshold bar */}
+          {/* Threshold bar */}
           <View style={s.thresholdCard}>
-            <Text style={s.thresholdTitle}>Part A Screening Threshold</Text>
-            <View style={s.thresholdBar}>
+            <Text style={s.thresholdTitle}>
+              {t.asrsThreshold ?? "Part A Screening Threshold"}
+            </Text>
+            <View style={s.thresholdBarBg}>
               <View
                 style={[
                   s.thresholdFill,
                   {
-                    width: `${(scoreA / 24) * 100}%`,
+                    width: `${Math.min((scoreA / 24) * 100, 100)}%`,
                     backgroundColor: interp.color,
                   },
                 ]}
@@ -323,19 +389,25 @@ export default function ASRSScreen() {
             </View>
           </View>
 
-          {/* Breakdown by part */}
+          {/* Answer breakdown */}
           <View style={s.breakdownCard}>
-            <Text style={s.breakdownTitle}>Answer breakdown</Text>
+            <Text style={s.breakdownTitle}>
+              {t.asrsAnswerBreakdown ?? "Answer breakdown"}
+            </Text>
             {["A", "B"].map((part) => (
               <View key={part} style={s.partSection}>
-                <Text style={s.partLabel}>Part {part}</Text>
+                <Text style={s.partSectionLabel}>
+                  {part === "A"
+                    ? (t.asrsPartA ?? "Part A")
+                    : (t.asrsPartB ?? "Part B")}
+                </Text>
                 <View style={s.breakdownGrid}>
-                  {OPTIONS.map((opt) => {
+                  {scoreLabels.map((label, idx) => {
                     const count = QUESTIONS.filter(
                       (q) => q.part === part,
-                    ).filter((q) => answers[q.id] === opt.value).length;
+                    ).filter((q) => answers[q.id] === idx).length;
                     return (
-                      <View key={opt.value} style={s.breakdownItem}>
+                      <View key={idx} style={s.breakdownItem}>
                         <Text
                           style={[
                             s.breakdownCount,
@@ -346,7 +418,7 @@ export default function ASRSScreen() {
                         >
                           {count}
                         </Text>
-                        <Text style={s.breakdownOptLabel}>{opt.label}</Text>
+                        <Text style={s.breakdownOptLabel}>{label}</Text>
                       </View>
                     );
                   })}
@@ -355,38 +427,41 @@ export default function ASRSScreen() {
             ))}
           </View>
 
-          <Text style={s.disclaimer}>
-            This assessment is for informational purposes only and is not a
-            substitute for professional medical advice, diagnosis, or treatment.
+          <Text style={s.fullDisclaimer}>
+            {t.asrsFullDisclaimer ??
+              "This assessment is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment."}
           </Text>
 
-          <TouchableOpacity
-            style={s.retakeBtn}
-            onPress={() => {
-              setAnswers({});
-              setStep("intro");
-            }}
-          >
+          <TouchableOpacity style={s.retakeBtn} onPress={reset}>
             <Ionicons name="refresh" size={18} color={theme.accent} />
-            <Text style={s.retakeBtnText}>Take again</Text>
+            <Text style={s.retakeBtnText}>
+              {t.asrsTakeAgain ?? "Take again"}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // ── Questions ──────────────────────────────────────────────────────────────
-  const answeredCount = Object.keys(answers).length;
+  // ── QUESTIONS ──────────────────────────────────────────────────────────────
   const progress = answeredCount / QUESTIONS.length;
+
+  const optionLabels = [
+    t.asrsNever ?? "Never",
+    t.asrsRarely ?? "Rarely",
+    t.asrsSometimes ?? "Sometimes",
+    t.asrsOften ?? "Often",
+    t.asrsVeryOften ?? "Very Often",
+  ];
 
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => setStep("intro")}>
+        <TouchableOpacity onPress={reset} style={{ padding: 4 }}>
           <Ionicons name="close" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>ASRS Assessment</Text>
+        <Text style={s.headerTitle}>{t.asrsTitle ?? "ASRS Assessment"}</Text>
         <Text style={s.headerCount}>{answeredCount}/18</Text>
       </View>
 
@@ -395,32 +470,41 @@ export default function ASRSScreen() {
         <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         {["A", "B"].map((part) => (
           <View key={part}>
+            {/* Part header */}
             <View style={s.partHeader}>
-              <Text style={s.partHeaderTitle}>Part {part}</Text>
+              <Text style={s.partHeaderTitle}>
+                {part === "A"
+                  ? (t.asrsPartA ?? "Part A")
+                  : (t.asrsPartB ?? "Part B")}
+              </Text>
               <Text style={s.partHeaderSub}>
                 {part === "A"
-                  ? "Screening questions (6)"
-                  : "Extended questions (12)"}
+                  ? (t.asrsPartASub ?? "Screening questions (6)")
+                  : (t.asrsPartBSub ?? "Extended questions (12)")}
               </Text>
             </View>
 
-            {QUESTIONS.filter((q) => q.part === part).map((q, idx) => {
+            {QUESTIONS.filter((q) => q.part === part).map((q) => {
               const answered = answers[q.id] !== undefined;
               return (
                 <View key={q.id} style={[s.qCard, answered && s.qCardAnswered]}>
                   <Text style={s.qNumber}>Q{q.id}</Text>
                   <Text style={s.qText}>{q.text}</Text>
                   <View style={s.optionsRow}>
-                    {OPTIONS.map((opt) => {
-                      const selected = answers[q.id] === opt.value;
+                    {optionLabels.map((label, idx) => {
+                      const selected = answers[q.id] === idx;
                       return (
                         <TouchableOpacity
-                          key={opt.value}
+                          key={idx}
                           style={[s.optBtn, selected && s.optBtnActive]}
-                          onPress={() => answer(q.id, opt.value)}
+                          onPress={() => answer(q.id, idx)}
                           activeOpacity={0.7}
                         >
                           <Text
@@ -429,7 +513,7 @@ export default function ASRSScreen() {
                               selected && s.optBtnTextActive,
                             ]}
                           >
-                            {opt.label}
+                            {label}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -443,7 +527,7 @@ export default function ASRSScreen() {
 
         {/* Submit */}
         <TouchableOpacity
-          style={[s.submitBtn, !allAnswered && s.submitBtnDisabled]}
+          style={[s.submitBtn, (!allAnswered || saving) && s.submitBtnDisabled]}
           onPress={submit}
           disabled={!allAnswered || saving}
         >
@@ -451,7 +535,9 @@ export default function ASRSScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={s.submitBtnText}>See Results</Text>
+              <Text style={s.submitBtnText}>
+                {t.asrsSeeResults ?? "See Results"}
+              </Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </>
           )}
@@ -459,8 +545,7 @@ export default function ASRSScreen() {
 
         {!allAnswered && (
           <Text style={s.unansweredNote}>
-            {18 - answeredCount} question{18 - answeredCount !== 1 ? "s" : ""}{" "}
-            remaining
+            {18 - answeredCount} {t.asrsRemaining ?? "questions remaining"}
           </Text>
         )}
       </ScrollView>
@@ -472,65 +557,90 @@ function makeStyles(t) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
 
-    // Intro
+    // ── Intro ──────────────────────────────────────────────────────────────
     introContainer: {
       padding: Spacing.lg,
+      paddingBottom: 48,
       alignItems: "center",
-      paddingBottom: 60,
-    },
-    introIcon: {
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      backgroundColor: t.accentBg,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 32,
-      marginBottom: 16,
     },
     introTitle: {
       color: t.text,
       fontSize: 28,
       fontWeight: "800",
+      marginTop: 8,
       marginBottom: 4,
     },
     introSubtitle: {
       color: t.accent,
       fontSize: FontSize.md,
       fontWeight: "600",
-      marginBottom: 16,
+      marginBottom: 20,
     },
-    introBody: {
-      color: t.textSecondary,
-      fontSize: FontSize.md,
-      textAlign: "center",
-      lineHeight: 22,
-      marginBottom: 24,
-    },
-    infoCard: {
+
+    infoBlock: {
       width: "100%",
       backgroundColor: t.surface,
       borderRadius: 14,
       borderWidth: 1,
       borderColor: t.border,
-      padding: Spacing.lg,
-      gap: 12,
-      marginBottom: 32,
+      padding: Spacing.md,
+      marginBottom: 12,
     },
-    infoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-    infoText: { color: t.text, fontSize: FontSize.md },
+    infoBlockHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 8,
+    },
+    infoHeading: { color: t.accent, fontSize: FontSize.md, fontWeight: "700" },
+    infoBody: { color: t.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
+
+    chipsRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 8,
+      marginBottom: 20,
+      width: "100%",
+    },
+    chip: {
+      flex: 1,
+      backgroundColor: t.accentBg,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: t.accentBorder,
+      padding: Spacing.sm,
+      alignItems: "center",
+    },
+    chipValue: { color: t.accent, fontSize: FontSize.lg, fontWeight: "800" },
+    chipLabel: { color: t.textMuted, fontSize: 11, marginTop: 2 },
+
+    doctorImage: { width: 260, height: 260, marginBottom: 20 },
+
     startBtn: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       backgroundColor: t.accent,
       borderRadius: 14,
-      paddingVertical: 16,
-      paddingHorizontal: 32,
-      gap: 8,
+      paddingVertical: 18,
+      paddingHorizontal: 24,
+      gap: 10,
+      width: "100%",
     },
-    startBtnText: { color: "#fff", fontSize: FontSize.lg, fontWeight: "700" },
+    startBtnText: {
+      color: "#fff",
+      fontSize: FontSize.lg,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+    },
+    introDisclaimer: {
+      color: t.textMuted,
+      fontSize: 11,
+      textAlign: "center",
+      marginTop: 12,
+    },
 
-    // Header
+    // ── Header ─────────────────────────────────────────────────────────────
     header: {
       flexDirection: "row",
       alignItems: "center",
@@ -549,11 +659,11 @@ function makeStyles(t) {
       textAlign: "right",
     },
 
-    // Progress
+    // ── Progress ───────────────────────────────────────────────────────────
     progressBg: { height: 3, backgroundColor: t.border },
     progressFill: { height: 3, backgroundColor: t.accent },
 
-    // Part header
+    // ── Part header ────────────────────────────────────────────────────────
     partHeader: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.lg,
@@ -566,7 +676,7 @@ function makeStyles(t) {
     },
     partHeaderSub: { color: t.textMuted, fontSize: FontSize.sm },
 
-    // Question card
+    // ── Question card ──────────────────────────────────────────────────────
     qCard: {
       marginHorizontal: Spacing.lg,
       marginBottom: Spacing.sm,
@@ -602,7 +712,7 @@ function makeStyles(t) {
     optBtnText: { color: t.textMuted, fontSize: 12, fontWeight: "500" },
     optBtnTextActive: { color: "#fff", fontWeight: "700" },
 
-    // Submit
+    // ── Submit ─────────────────────────────────────────────────────────────
     submitBtn: {
       flexDirection: "row",
       alignItems: "center",
@@ -623,7 +733,7 @@ function makeStyles(t) {
       marginTop: 8,
     },
 
-    // Result
+    // ── Result ─────────────────────────────────────────────────────────────
     resultContainer: {
       padding: Spacing.lg,
       alignItems: "center",
@@ -653,6 +763,7 @@ function makeStyles(t) {
       lineHeight: 22,
       marginBottom: 24,
     },
+
     scoresRow: {
       flexDirection: "row",
       gap: 12,
@@ -674,6 +785,7 @@ function makeStyles(t) {
       textAlign: "center",
       marginTop: 4,
     },
+
     thresholdCard: {
       width: "100%",
       backgroundColor: t.surface,
@@ -689,7 +801,7 @@ function makeStyles(t) {
       fontWeight: "700",
       marginBottom: 12,
     },
-    thresholdBar: {
+    thresholdBarBg: {
       height: 10,
       backgroundColor: t.border,
       borderRadius: 5,
@@ -707,6 +819,7 @@ function makeStyles(t) {
     },
     thresholdLabels: { flexDirection: "row", justifyContent: "space-between" },
     thresholdLabel: { fontSize: 11 },
+
     breakdownCard: {
       width: "100%",
       backgroundColor: t.surface,
@@ -723,7 +836,7 @@ function makeStyles(t) {
       marginBottom: 12,
     },
     partSection: { marginBottom: 12 },
-    partLabel: {
+    partSectionLabel: {
       color: t.textMuted,
       fontSize: FontSize.sm,
       fontWeight: "600",
@@ -738,7 +851,8 @@ function makeStyles(t) {
       textAlign: "center",
       marginTop: 2,
     },
-    disclaimer: {
+
+    fullDisclaimer: {
       color: t.textMuted,
       fontSize: 11,
       textAlign: "center",
