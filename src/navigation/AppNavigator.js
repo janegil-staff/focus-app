@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { AdviceProvider } from "../context/AdviceContext";
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
@@ -26,6 +27,7 @@ import ASRSInfoScreen from "../screens/asrs/ASRSInfoScreen";
 import ASRSScreen from "../screens/asrs/ASRSScreen";
 import StudiesScreen from "../screens/share/StudiesScreen";
 import AdviceScreen from "../screens/advices/AdviceScreen";
+
 const Stack = createNativeStackNavigator();
 
 // ── Auth stack ────────────────────────────────────────────────────────────────
@@ -54,10 +56,7 @@ function AppStack() {
       <Stack.Screen name="LogHistory" component={LogHistoryScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Language" component={LanguageScreen} />
-      <Stack.Screen
-        name="PersonalSettings"
-        component={PersonalSettingsScreen}
-      />
+      <Stack.Screen name="PersonalSettings" component={PersonalSettingsScreen} />
       <Stack.Screen name="Medications" component={MedicationsScreen} />
       <Stack.Screen name="ASRSInfo" component={ASRSInfoScreen} />
       <Stack.Screen name="ASRS" component={ASRSScreen} />
@@ -91,23 +90,18 @@ export default function AppNavigator() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#0A0F1E",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{ flex: 1, backgroundColor: "#0A0F1E", justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator color="#4A7AB5" size="large" />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <RootNavigator />
-    </NavigationContainer>
+    <AdviceProvider>
+      <NavigationContainer>
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+        <RootNavigator />
+      </NavigationContainer>
+    </AdviceProvider>
   );
 }
