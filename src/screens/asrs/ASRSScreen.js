@@ -1,13 +1,7 @@
 import React, { useState, useRef } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  Image,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  ActivityIndicator, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,87 +11,107 @@ import { useLang } from "../../context/LangContext";
 import { Spacing, FontSize } from "../../theme";
 import client from "../../api/client";
 
-const OPTIONS = [
-  { label: "Never", value: 0 },
-  { label: "Rarely", value: 1 },
-  { label: "Sometimes", value: 2 },
-  { label: "Often", value: 3 },
-  { label: "Very Often", value: 4 },
-];
-
-const QUESTIONS = [
-  { id: 1,  part: "A", text: "How often do you have trouble wrapping up the final details of a project, once the challenging parts have been done?" },
-  { id: 2,  part: "A", text: "How often do you have difficulty getting things in order when you have to do a task that requires organization?" },
-  { id: 3,  part: "A", text: "How often do you have problems remembering appointments or obligations?" },
-  { id: 4,  part: "A", text: "When you have a task that requires a lot of thought, how often do you avoid or delay getting started?" },
-  { id: 5,  part: "A", text: "How often do you fidget or squirm with your hands or feet when you have to sit down for a long time?" },
-  { id: 6,  part: "A", text: "How often do you feel overly active and compelled to do things, like you were driven by a motor?" },
-  { id: 7,  part: "B", text: "How often do you make careless mistakes when you have to work on a boring or difficult project?" },
-  { id: 8,  part: "B", text: "How often do you have difficulty keeping your attention when you are doing boring or repetitive work?" },
-  { id: 9,  part: "B", text: "How often do you have difficulty concentrating on what people say to you, even when they are speaking to you directly?" },
-  { id: 10, part: "B", text: "How often do you misplace or have difficulty finding things at home or at work?" },
-  { id: 11, part: "B", text: "How often are you distracted by activity or noise around you?" },
-  { id: 12, part: "B", text: "How often do you leave your seat in meetings or other situations in which you are expected to remain seated?" },
-  { id: 13, part: "B", text: "How often do you feel restless or fidgety?" },
-  { id: 14, part: "B", text: "How often do you have difficulty unwinding and relaxing when you have time to yourself?" },
-  { id: 15, part: "B", text: "How often do you find yourself talking too much when you are in social situations?" },
-  { id: 16, part: "B", text: "How often do you find yourself finishing the sentences of the people you are talking to?" },
-  { id: 17, part: "B", text: "How often do you have difficulty waiting your turn in situations when turn taking is required?" },
-  { id: 18, part: "B", text: "How often do you interrupt others when they are busy?" },
-];
-
 function getInterpretation(scoreA, t) {
-  if (scoreA >= 14)
-    return { level: "high", title: t.asrsHighTitle ?? "Highly consistent with ADHD", text: t.asrsHighBody ?? "Your Part A score suggests symptoms highly consistent with ADHD in adults. Consider discussing these results with a healthcare professional.", color: "#EF4444", icon: "alert-circle" };
-  if (scoreA >= 9)
-    return { level: "moderate", title: t.asrsModTitle ?? "Moderately consistent with ADHD", text: t.asrsModBody ?? "Your scores suggest some symptoms consistent with ADHD. A healthcare professional can help clarify further.", color: "#FB923C", icon: "warning" };
-  return { level: "low", title: t.asrsLowTitle ?? "Not strongly consistent with ADHD", text: t.asrsLowBody ?? "Your current scores do not strongly indicate ADHD symptoms. Continue tracking over time for a fuller picture.", color: "#22C55E", icon: "checkmark-circle" };
+  if (scoreA >= 14) return {
+    level: "high",
+    title: t.asrsHighTitle ?? "Highly consistent with ADHD",
+    text:  t.asrsHighBody  ?? "Your Part A score suggests symptoms highly consistent with ADHD in adults.",
+    color: "#EF4444", icon: "alert-circle",
+  };
+  if (scoreA >= 9) return {
+    level: "moderate",
+    title: t.asrsModTitle ?? "Moderately consistent with ADHD",
+    text:  t.asrsModBody  ?? "Your scores suggest some symptoms consistent with ADHD.",
+    color: "#FB923C", icon: "warning",
+  };
+  return {
+    level: "low",
+    title: t.asrsLowTitle ?? "Not strongly consistent with ADHD",
+    text:  t.asrsLowBody  ?? "Your current scores do not strongly indicate ADHD symptoms.",
+    color: "#22C55E", icon: "checkmark-circle",
+  };
 }
 
-// ── Shared gradient header ─────────────────────────────────────────────────────
-function GradientHeader({ title, onBack, insets, theme }) {
+function GradientHeader({ theme, insets, onBack, title, right = null }) {
   return (
     <LinearGradient
       colors={[theme.accent, theme.accentDark ?? "#2D4A6E"]}
-      start={{ x: 0, y: 0.5 }}
-      end={{ x: 1, y: 0.5 }}
-      style={[ss.header, { paddingTop: insets.top + Spacing.sm }]}
+      start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+      style={[sh.header, { paddingTop: insets.top + 10 }]}
     >
-      <TouchableOpacity onPress={onBack} style={ss.headerBtn}>
-        <Text style={ss.headerBack}>‹</Text>
+      <TouchableOpacity onPress={onBack} style={{ width: 40 }}>
+        <Text style={sh.headerBack}>‹</Text>
       </TouchableOpacity>
-      <Text style={ss.headerTitle}>{title}</Text>
-      <View style={{ width: 40 }} />
+      <Text style={sh.headerTitle}>{title}</Text>
+      <View style={{ width: 40, alignItems: "flex-end" }}>{right}</View>
     </LinearGradient>
   );
 }
 
-export default function ASRSScreen({ navigation }) {
-  const { theme } = useTheme();
-  const { t } = useLang();
-  const insets = useSafeAreaInsets();
-  const scrollRef = useRef(null);
+const sh = StyleSheet.create({
+  header:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md },
+  headerBack:  { color: "#fff", fontSize: 30, lineHeight: 34 },
+  headerTitle: { color: "#fff", fontSize: FontSize.md, fontWeight: "700", flex: 1, textAlign: "center" },
+  headerCount: { color: "rgba(255,255,255,0.8)", fontSize: FontSize.sm, fontWeight: "600", textAlign: "right" },
+});
 
-  const [step, setStep] = useState("intro");
+export default function ASRSScreen({ navigation }) {
+  const { theme }  = useTheme();
+  const { t }      = useLang();
+  const insets     = useSafeAreaInsets();
+  const scrollRef  = useRef(null);
+
+  const [step, setStep]       = useState("questions");
   const [answers, setAnswers] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null);
+  const [saving, setSaving]   = useState(false);
+  const [result, setResult]   = useState(null);
 
   const s = makeStyles(theme);
 
-  const answer = (qId, value) => setAnswers((prev) => ({ ...prev, [qId]: value }));
+  // ── Questions built from translations ────────────────────────────────────
+  const QUESTIONS = [
+    { id: 1,  part: "A", text: t.asrsQ1  ?? "How often do you have trouble wrapping up the final details of a project, once the challenging parts have been done?" },
+    { id: 2,  part: "A", text: t.asrsQ2  ?? "How often do you have difficulty getting things in order when you have to do a task that requires organization?" },
+    { id: 3,  part: "A", text: t.asrsQ3  ?? "How often do you have problems remembering appointments or obligations?" },
+    { id: 4,  part: "A", text: t.asrsQ4  ?? "When you have a task that requires a lot of thought, how often do you avoid or delay getting started?" },
+    { id: 5,  part: "A", text: t.asrsQ5  ?? "How often do you fidget or squirm with your hands or feet when you have to sit down for a long time?" },
+    { id: 6,  part: "A", text: t.asrsQ6  ?? "How often do you feel overly active and compelled to do things, like you were driven by a motor?" },
+    { id: 7,  part: "B", text: t.asrsQ7  ?? "How often do you make careless mistakes when you have to work on a boring or difficult project?" },
+    { id: 8,  part: "B", text: t.asrsQ8  ?? "How often do you have difficulty keeping your attention when you are doing boring or repetitive work?" },
+    { id: 9,  part: "B", text: t.asrsQ9  ?? "How often do you have difficulty concentrating on what people say to you, even when they are speaking to you directly?" },
+    { id: 10, part: "B", text: t.asrsQ10 ?? "How often do you misplace or have difficulty finding things at home or at work?" },
+    { id: 11, part: "B", text: t.asrsQ11 ?? "How often are you distracted by activity or noise around you?" },
+    { id: 12, part: "B", text: t.asrsQ12 ?? "How often do you leave your seat in meetings or other situations in which you are expected to remain seated?" },
+    { id: 13, part: "B", text: t.asrsQ13 ?? "How often do you feel restless or fidgety?" },
+    { id: 14, part: "B", text: t.asrsQ14 ?? "How often do you have difficulty unwinding and relaxing when you have time to yourself?" },
+    { id: 15, part: "B", text: t.asrsQ15 ?? "How often do you find yourself talking too much when you are in social situations?" },
+    { id: 16, part: "B", text: t.asrsQ16 ?? "How often do you find yourself finishing the sentences of the people you are talking to?" },
+    { id: 17, part: "B", text: t.asrsQ17 ?? "How often do you have difficulty waiting your turn in situations when turn taking is required?" },
+    { id: 18, part: "B", text: t.asrsQ18 ?? "How often do you interrupt others when they are busy?" },
+  ];
 
-  const allAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const optionLabels = [
+    t.asrsNever     ?? "Never",
+    t.asrsRarely    ?? "Rarely",
+    t.asrsSometimes ?? "Sometimes",
+    t.asrsOften     ?? "Often",
+    t.asrsVeryOften ?? "Very Often",
+  ];
+
+  const answer       = (qId, value) => setAnswers(prev => ({ ...prev, [qId]: value }));
+  const allAnswered   = QUESTIONS.every(q => answers[q.id] !== undefined);
   const answeredCount = Object.keys(answers).length;
+  const progress      = answeredCount / QUESTIONS.length;
+  const goBack        = () => navigation.navigate("Home");
 
   const submit = async () => {
     if (!allAnswered) {
-      Alert.alert("Not complete", `${18 - answeredCount} questions remaining.`);
+      Alert.alert("Not complete", `${18 - answeredCount} ${t.asrsRemaining ?? "questions remaining"}.`);
       return;
     }
-    const scoreA = QUESTIONS.filter((q) => q.part === "A").reduce((acc, q) => acc + answers[q.id], 0);
+    const scoreA     = QUESTIONS.filter(q => q.part === "A").reduce((acc, q) => acc + answers[q.id], 0);
     const scoreTotal = QUESTIONS.reduce((acc, q) => acc + answers[q.id], 0);
-    const interp = getInterpretation(scoreA, t);
+    const interp     = getInterpretation(scoreA, t);
 
     setSaving(true);
     try {
@@ -113,90 +127,18 @@ export default function ASRSScreen({ navigation }) {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const reset = () => { setAnswers({}); setResult(null); setStep("intro"); };
+  const reset = () => { setAnswers({}); setResult(null); setStep("questions"); };
 
-  // ── INTRO ──────────────────────────────────────────────────────────────────
-  if (step === "intro") {
-    return (
-      <View style={[s.safe, { backgroundColor: theme.bg }]}>
-        <GradientHeader
-          title={t.asrsTitle ?? "ASRS-v1.1"}
-          onBack={() => navigation.goBack()}
-          insets={insets}
-          theme={theme}
-        />
-        <ScrollView contentContainerStyle={s.introContainer} showsVerticalScrollIndicator={false}>
-          <Text style={s.introTitle}>{t.asrsTitle ?? "ASRS-v1.1"}</Text>
-          <Text style={s.introSubtitle}>{t.asrsSubtitle ?? "Adult ADHD Self-Report Scale"}</Text>
-
-          <View style={s.infoBlock}>
-            <View style={s.infoBlockHeader}>
-              <Ionicons name="information-circle" size={20} color={theme.accent} />
-              <Text style={s.infoHeading}>What is ASRS?</Text>
-            </View>
-            <Text style={s.infoBody}>
-              The Adult ADHD Self-Report Scale (ASRS-v1.1) is the official WHO-endorsed screening tool for ADHD in adults. It was developed in collaboration with the World Health Organization and is used by clinicians worldwide.
-            </Text>
-          </View>
-
-          <View style={s.infoBlock}>
-            <View style={s.infoBlockHeader}>
-              <Ionicons name="heart" size={20} color={theme.accent} />
-              <Text style={s.infoHeading}>Why does it matter?</Text>
-            </View>
-            <Text style={s.infoBody}>
-              ADHD often goes unrecognized in adults. Regular self-assessments help you and your doctor track symptom patterns over time, measure whether treatment is working, and have more informed conversations at appointments.
-            </Text>
-          </View>
-
-          <View style={s.infoBlock}>
-            <View style={s.infoBlockHeader}>
-              <Ionicons name="clipboard" size={20} color={theme.accent} />
-              <Text style={s.infoHeading}>How does it work?</Text>
-            </View>
-            <Text style={s.infoBody}>
-              You answer 18 questions about how often you experience specific ADHD-related symptoms. Part A (6 questions) is the clinical screener — a score of 14 or higher is considered significant. Part B (12 questions) gives a fuller picture of your symptom profile.
-            </Text>
-          </View>
-
-          <View style={s.chipsRow}>
-            <View style={s.chip}><Text style={s.chipValue}>18</Text><Text style={s.chipLabel}>Questions</Text></View>
-            <View style={s.chip}><Text style={s.chipValue}>5 min</Text><Text style={s.chipLabel}>To complete</Text></View>
-            <View style={s.chip}><Text style={s.chipValue}>WHO</Text><Text style={s.chipLabel}>Endorsed</Text></View>
-          </View>
-
-          <TouchableOpacity style={s.startBtn} onPress={() => setStep("questions")}>
-            <Ionicons name="clipboard" size={20} color="#fff" />
-            <Text style={s.startBtnText}>{t.registerAsrsRecord ?? "Register ASRS Record"}</Text>
-          </TouchableOpacity>
-
-          <Text style={s.introDisclaimer}>{t.asrsDisclaimer ?? "WHO-endorsed • Not a clinical diagnosis"}</Text>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // ── RESULT ─────────────────────────────────────────────────────────────────
+  // ── RESULT ──────────────────────────────────────────────────────────────────
   if (step === "result") {
     const { scoreA, scoreTotal, interp } = result;
-    const scoreLabels = [
-      t.asrsNever ?? "Never", t.asrsRarely ?? "Rarely", t.asrsSometimes ?? "Sometimes",
-      t.asrsOften ?? "Often", t.asrsVeryOften ?? "Very Often",
-    ];
-
     return (
-      <View style={[s.safe, { backgroundColor: theme.bg }]}>
-        <GradientHeader
-          title={t.asrsTitle ?? "ASRS-v1.1"}
-          onBack={reset}
-          insets={insets}
-          theme={theme}
-        />
+      <View style={s.safe}>
+        <GradientHeader theme={theme} insets={insets} onBack={goBack} title={t.asrsTitle ?? "ASRS Assessment"} />
         <ScrollView ref={scrollRef} contentContainerStyle={s.resultContainer} showsVerticalScrollIndicator={false}>
           <View style={[s.resultBadge, { borderColor: interp.color, backgroundColor: interp.color + "18" }]}>
             <Ionicons name={interp.icon} size={52} color={interp.color} />
           </View>
-
           <Text style={s.resultTitle}>{interp.title}</Text>
           <Text style={s.resultBody}>{interp.text}</Text>
 
@@ -226,12 +168,14 @@ export default function ASRSScreen({ navigation }) {
 
           <View style={s.breakdownCard}>
             <Text style={s.breakdownTitle}>{t.asrsAnswerBreakdown ?? "Answer breakdown"}</Text>
-            {["A", "B"].map((part) => (
+            {["A", "B"].map(part => (
               <View key={part} style={s.partSection}>
-                <Text style={s.partSectionLabel}>{part === "A" ? (t.asrsPartA ?? "Part A") : (t.asrsPartB ?? "Part B")}</Text>
+                <Text style={s.partSectionLabel}>
+                  {part === "A" ? (t.asrsPartA ?? "Part A") : (t.asrsPartB ?? "Part B")}
+                </Text>
                 <View style={s.breakdownGrid}>
-                  {scoreLabels.map((label, idx) => {
-                    const count = QUESTIONS.filter((q) => q.part === part && answers[q.id] === idx).length;
+                  {optionLabels.map((label, idx) => {
+                    const count = QUESTIONS.filter(q => q.part === part).filter(q => answers[q.id] === idx).length;
                     return (
                       <View key={idx} style={s.breakdownItem}>
                         <Text style={[s.breakdownCount, { color: count > 0 ? theme.accent : theme.textMuted }]}>{count}</Text>
@@ -244,9 +188,7 @@ export default function ASRSScreen({ navigation }) {
             ))}
           </View>
 
-          <Text style={s.fullDisclaimer}>
-            {t.asrsFullDisclaimer ?? "This assessment is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment."}
-          </Text>
+          <Text style={s.fullDisclaimer}>{t.asrsFullDisclaimer ?? "This assessment is for informational purposes only."}</Text>
 
           <TouchableOpacity style={s.retakeBtn} onPress={reset}>
             <Ionicons name="refresh" size={18} color={theme.accent} />
@@ -257,41 +199,33 @@ export default function ASRSScreen({ navigation }) {
     );
   }
 
-  // ── QUESTIONS ──────────────────────────────────────────────────────────────
-  const progress = answeredCount / QUESTIONS.length;
-  const optionLabels = [
-    t.asrsNever ?? "Never", t.asrsRarely ?? "Rarely", t.asrsSometimes ?? "Sometimes",
-    t.asrsOften ?? "Often", t.asrsVeryOften ?? "Very Often",
-  ];
-
+  // ── QUESTIONS ────────────────────────────────────────────────────────────────
   return (
-    <View style={[s.safe, { backgroundColor: theme.bg }]}>
+    <View style={s.safe}>
       <GradientHeader
+        theme={theme} insets={insets} onBack={goBack}
         title={t.asrsTitle ?? "ASRS Assessment"}
-        onBack={reset}
-        insets={insets}
-        theme={theme}
+        right={<Text style={sh.headerCount}>{answeredCount}/18</Text>}
       />
-
-      {/* Progress bar */}
       <View style={s.progressBg}>
-        <View style={[s.progressFill, { width: `${progress * 100}%`, backgroundColor: theme.accent }]} />
-      </View>
-
-      {/* answered count */}
-      <View style={{ alignItems: "flex-end", paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
-        <Text style={[s.headerCount, { color: theme.textMuted }]}>{answeredCount}/18</Text>
+        <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
       </View>
 
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        {["A", "B"].map((part) => (
+        {["A", "B"].map(part => (
           <View key={part}>
             <View style={s.partHeader}>
-              <Text style={s.partHeaderTitle}>{part === "A" ? (t.asrsPartA ?? "Part A") : (t.asrsPartB ?? "Part B")}</Text>
-              <Text style={s.partHeaderSub}>{part === "A" ? (t.asrsPartASub ?? "Screening questions (6)") : (t.asrsPartBSub ?? "Extended questions (12)")}</Text>
+              <Text style={s.partHeaderTitle}>
+                {part === "A" ? (t.asrsPartA ?? "Part A") : (t.asrsPartB ?? "Part B")}
+              </Text>
+              <Text style={s.partHeaderSub}>
+                {part === "A"
+                  ? (t.asrsPartASub ?? "Screening questions (6)")
+                  : (t.asrsPartBSub ?? "Extended questions (12)")}
+              </Text>
             </View>
 
-            {QUESTIONS.filter((q) => q.part === part).map((q) => {
+            {QUESTIONS.filter(q => q.part === part).map(q => {
               const answered = answers[q.id] !== undefined;
               return (
                 <View key={q.id} style={[s.qCard, answered && s.qCardAnswered]}>
@@ -323,98 +257,54 @@ export default function ASRSScreen({ navigation }) {
           onPress={submit}
           disabled={!allAnswered || saving}
         >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Text style={s.submitBtnText}>{t.asrsSeeResults ?? "See Results"}</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
-            </>
-          )}
+          {saving
+            ? <ActivityIndicator color="#fff" />
+            : <>
+                <Text style={s.submitBtnText}>{t.asrsSeeResults ?? "See Results"}</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
+              </>
+          }
         </TouchableOpacity>
 
         {!allAnswered && (
-          <Text style={s.unansweredNote}>{18 - answeredCount} {t.asrsRemaining ?? "questions remaining"}</Text>
+          <Text style={s.unansweredNote}>
+            {18 - answeredCount} {t.asrsRemaining ?? "questions remaining"}
+          </Text>
         )}
       </ScrollView>
     </View>
   );
 }
 
-// ── Header styles (shared across all steps) ────────────────────────────────────
-const ss = StyleSheet.create({
-  header: {
-    paddingBottom: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerBtn:  { width: 40 },
-  headerBack: { color: "#fff", fontSize: 28, lineHeight: 34 },
-  headerTitle: { flex: 1, color: "#fff", fontSize: FontSize.lg, fontWeight: "600", textAlign: "center" },
-});
-
 function makeStyles(t) {
   return StyleSheet.create({
-    safe: { flex: 1 },
-
-    // ── Intro ──────────────────────────────────────────────────────────────
-    introContainer: { padding: Spacing.lg, paddingBottom: 48, alignItems: "center" },
-    introTitle:     { color: t.text, fontSize: 28, fontWeight: "800", marginTop: 8, marginBottom: 4 },
-    introSubtitle:  { color: t.accent, fontSize: FontSize.md, fontWeight: "600", marginBottom: 20 },
-
-    infoBlock:       { width: "100%", backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md, marginBottom: 12 },
-    infoBlockHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-    infoHeading:     { color: t.accent, fontSize: FontSize.md, fontWeight: "700" },
-    infoBody:        { color: t.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
-
-    chipsRow:  { flexDirection: "row", gap: 10, marginTop: 8, marginBottom: 20, width: "100%" },
-    chip:      { flex: 1, backgroundColor: t.accentBg, borderRadius: 12, borderWidth: 1, borderColor: t.accentBorder, padding: Spacing.sm, alignItems: "center" },
-    chipValue: { color: t.accent, fontSize: FontSize.lg, fontWeight: "800" },
-    chipLabel: { color: t.textMuted, fontSize: 11, marginTop: 2 },
-
-    startBtn:      { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: t.accent, borderRadius: 14, paddingVertical: 18, paddingHorizontal: 24, gap: 10, width: "100%" },
-    startBtnText:  { color: "#fff", fontSize: FontSize.lg, fontWeight: "800", letterSpacing: 0.5 },
-    introDisclaimer: { color: t.textMuted, fontSize: 11, textAlign: "center", marginTop: 12 },
-
-    // ── Progress / count ───────────────────────────────────────────────────
+    safe: { flex: 1, backgroundColor: t.bg },
     progressBg:   { height: 3, backgroundColor: t.border },
-    progressFill: { height: 3 },
-    headerCount:  { fontSize: FontSize.sm, fontWeight: "600", minWidth: 36, textAlign: "right" },
-
-    // ── Part header ────────────────────────────────────────────────────────
+    progressFill: { height: 3, backgroundColor: t.accent },
     partHeader:      { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
     partHeaderTitle: { color: t.text, fontSize: FontSize.lg, fontWeight: "800" },
     partHeaderSub:   { color: t.textMuted, fontSize: FontSize.sm },
-
-    // ── Question card ──────────────────────────────────────────────────────
-    qCard:         { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md },
-    qCardAnswered: { borderColor: t.accentBorder },
-    qNumber:       { color: t.accent, fontSize: FontSize.sm, fontWeight: "700", marginBottom: 6 },
-    qText:         { color: t.text, fontSize: FontSize.md, lineHeight: 22, marginBottom: 14 },
-    optionsRow:    { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-    optBtn:        { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg },
-    optBtnActive:  { backgroundColor: t.accent, borderColor: t.accent },
-    optBtnText:    { color: t.textMuted, fontSize: 12, fontWeight: "500" },
+    qCard:            { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md },
+    qCardAnswered:    { borderColor: t.accentBorder },
+    qNumber:          { color: t.accent, fontSize: FontSize.sm, fontWeight: "700", marginBottom: 6 },
+    qText:            { color: t.text, fontSize: FontSize.md, lineHeight: 22, marginBottom: 14 },
+    optionsRow:       { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    optBtn:           { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg },
+    optBtnActive:     { backgroundColor: t.accent, borderColor: t.accent },
+    optBtnText:       { color: t.textMuted, fontSize: 12, fontWeight: "500" },
     optBtnTextActive: { color: "#fff", fontWeight: "700" },
-
-    // ── Submit ─────────────────────────────────────────────────────────────
     submitBtn:         { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: t.accent, borderRadius: 14, marginHorizontal: Spacing.lg, marginTop: Spacing.lg, paddingVertical: 16, gap: 8 },
     submitBtnDisabled: { opacity: 0.4 },
     submitBtnText:     { color: "#fff", fontSize: FontSize.lg, fontWeight: "700" },
     unansweredNote:    { color: t.textMuted, textAlign: "center", fontSize: FontSize.sm, marginTop: 8 },
-
-    // ── Result ─────────────────────────────────────────────────────────────
     resultContainer: { padding: Spacing.lg, alignItems: "center", paddingBottom: 60 },
     resultBadge:     { width: 100, height: 100, borderRadius: 50, borderWidth: 2, alignItems: "center", justifyContent: "center", marginTop: 24, marginBottom: 16 },
     resultTitle:     { color: t.text, fontSize: FontSize.lg, fontWeight: "800", textAlign: "center", marginBottom: 8 },
     resultBody:      { color: t.textSecondary, fontSize: FontSize.md, textAlign: "center", lineHeight: 22, marginBottom: 24 },
-
-    scoresRow: { flexDirection: "row", gap: 12, marginBottom: 20, width: "100%" },
+    scoresRow:  { flexDirection: "row", gap: 12, marginBottom: 20, width: "100%" },
     scoreCard:  { flex: 1, backgroundColor: t.surface, borderRadius: 14, borderWidth: 2, padding: Spacing.md, alignItems: "center" },
     scoreValue: { fontSize: 36, fontWeight: "800" },
     scoreLabel: { color: t.textMuted, fontSize: 11, textAlign: "center", marginTop: 4 },
-
     thresholdCard:   { width: "100%", backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md, marginBottom: 16 },
     thresholdTitle:  { color: t.text, fontSize: FontSize.sm, fontWeight: "700", marginBottom: 12 },
     thresholdBarBg:  { height: 10, backgroundColor: t.border, borderRadius: 5, overflow: "visible", position: "relative", marginBottom: 6 },
@@ -422,16 +312,14 @@ function makeStyles(t) {
     thresholdLine:   { position: "absolute", top: -4, width: 2, height: 18, backgroundColor: "#EF4444" },
     thresholdLabels: { flexDirection: "row", justifyContent: "space-between" },
     thresholdLabel:  { fontSize: 11 },
-
-    breakdownCard:      { width: "100%", backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md, marginBottom: 16 },
-    breakdownTitle:     { color: t.text, fontSize: FontSize.sm, fontWeight: "700", marginBottom: 12 },
-    partSection:        { marginBottom: 12 },
-    partSectionLabel:   { color: t.textMuted, fontSize: FontSize.sm, fontWeight: "600", marginBottom: 8 },
-    breakdownGrid:      { flexDirection: "row", justifyContent: "space-between" },
-    breakdownItem:      { alignItems: "center", flex: 1 },
-    breakdownCount:     { fontSize: 18, fontWeight: "800" },
-    breakdownOptLabel:  { color: t.textMuted, fontSize: 9, textAlign: "center", marginTop: 2 },
-
+    breakdownCard:     { width: "100%", backgroundColor: t.surface, borderRadius: 14, borderWidth: 1, borderColor: t.border, padding: Spacing.md, marginBottom: 16 },
+    breakdownTitle:    { color: t.text, fontSize: FontSize.sm, fontWeight: "700", marginBottom: 12 },
+    partSection:       { marginBottom: 12 },
+    partSectionLabel:  { color: t.textMuted, fontSize: FontSize.sm, fontWeight: "600", marginBottom: 8 },
+    breakdownGrid:     { flexDirection: "row", justifyContent: "space-between" },
+    breakdownItem:     { alignItems: "center", flex: 1 },
+    breakdownCount:    { fontSize: 18, fontWeight: "800" },
+    breakdownOptLabel: { color: t.textMuted, fontSize: 9, textAlign: "center", marginTop: 2 },
     fullDisclaimer: { color: t.textMuted, fontSize: 11, textAlign: "center", lineHeight: 16, marginBottom: 20 },
     retakeBtn:      { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, borderWidth: 1, borderColor: t.accent },
     retakeBtnText:  { color: t.accent, fontSize: FontSize.md, fontWeight: "600" },

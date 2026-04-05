@@ -10,6 +10,7 @@ import { useLogs } from '../../context/LogsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LangContext';
 import { FontSize, Spacing, Radius } from '../../theme';
+import AdviceBulbButton from "../../components/AdviceBulbButton";
 
 const { width } = Dimensions.get('window');
 
@@ -204,12 +205,8 @@ export default function HomeScreen({ navigation }) {
           <Text style={s.appName}>{t.appName}</Text>
           <Text style={s.tagline}>{t.tagline}</Text>
         </View>
-        <TouchableOpacity
-          style={s.headerBtn}
-          onPress={() => navigation.navigate('LogEntry', { date: today, log: todayLog })}
-        >
-          <ClipboardIcon />
-        </TouchableOpacity>
+
+        <AdviceBulbButton onPress={() => navigation.navigate("Advice")} color="#fff" />
       </LinearGradient>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>

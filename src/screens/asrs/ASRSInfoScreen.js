@@ -1,11 +1,6 @@
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -50,10 +45,10 @@ function IconStudies({ color, size = 24 }) {
 }
 
 export default function ASRSInfoScreen({ navigation }) {
-  const { theme } = useTheme();
-  const { t }     = useLang();
-  const insets    = useSafeAreaInsets();
-  const PRIMARY   = theme.accent ?? "#4A7AB5";
+  const { theme }  = useTheme();
+  const { t }      = useLang();
+  const insets     = useSafeAreaInsets();
+  const PRIMARY    = theme.accent ?? "#4A7AB5";
 
   const tabs = [
     { key: "code",    label: t.shareTabCode    ?? "Code",    Icon: IconCode },
@@ -62,37 +57,43 @@ export default function ASRSInfoScreen({ navigation }) {
   ];
 
   const handleTab = (key) => {
-    if (key === "code" || key === "studies") {
-      navigation.navigate("Share", { initialTab: key });
-    }
+    if (key === "code")    navigation.navigate("Share");
+    if (key === "studies") navigation.navigate("Studies");
+    // asrs stays here
   };
 
   return (
     <View style={[s.root, { backgroundColor: theme.bgSecondary ?? "#F0F4F8" }]}>
 
-      {/* Header spanning status bar */}
+      {/* Header */}
       <LinearGradient
         colors={[PRIMARY, theme.accentDark ?? "#2D4A6E"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={[s.header, { paddingTop: insets.top + 10 }]}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerBtn}>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={s.headerBtn}>
           <Text style={s.headerBack}>‹</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>{t.shareData ?? "Share Data"}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
-      {/* Scrollable content */}
+      {/* Content */}
       <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
-        <Text style={s.headline}>Your ASRS Record</Text>
-        <Text style={s.explanation}>
-          This questionnaire is designed to help you describe how you feel and
-          what your ADHD symptoms prevent you from doing.
-          {"\n"}
-          The form provides a solid basis for you to discuss your ADHD with your doctor.
+
+        {/* 1. Headline */}
+        <Text style={s.headline}>
+          {t.yourAsrsRecord ?? "Your ASRS Record"}
         </Text>
+
+        {/* 2. Explanation in accent color */}
+        <Text style={s.explanation}>
+          {t.asrsInfoExplanation ??
+            "This questionnaire is designed to help you describe how you feel and what your ADHD symptoms prevent you from doing. The form provides a solid basis for you to discuss your ADHD with your doctor."}
+        </Text>
+
+        {/* 3. Doctor image */}
         <Image
           source={require("../../../assets/images/informative.png")}
           style={s.doctorImage}
@@ -100,7 +101,7 @@ export default function ASRSInfoScreen({ navigation }) {
         />
       </ScrollView>
 
-      {/* Register button */}
+      {/* 4. Gradient button */}
       <View style={s.btnContainer}>
         <TouchableOpacity
           onPress={() => navigation.navigate("ASRS")}
@@ -120,7 +121,7 @@ export default function ASRSInfoScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom tab bar */}
+      {/* 5. Bottom tab bar */}
       <View style={s.tabBarWrapper}>
         <View style={[s.tabBar, { paddingBottom: insets.bottom + 8 }]}>
           {tabs.map(({ key, label, Icon }) => {
@@ -133,7 +134,10 @@ export default function ASRSInfoScreen({ navigation }) {
                 activeOpacity={0.7}
               >
                 <Icon color={active ? PRIMARY : "#a0b8d0"} size={24} />
-                <Text style={[s.tabLabel, { color: active ? PRIMARY : "#a0b8d0", fontWeight: active ? "700" : "500" }]}>
+                <Text style={[s.tabLabel, {
+                  color: active ? PRIMARY : "#a0b8d0",
+                  fontWeight: active ? "700" : "500",
+                }]}>
                   {label}
                 </Text>
               </TouchableOpacity>
@@ -154,14 +158,42 @@ const s = StyleSheet.create({
   headerTitle:{ flex: 1, color: "#fff", fontSize: FontSize.lg, fontWeight: "600", textAlign: "center" },
 
   container:   { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: 20, alignItems: "center" },
-  headline:    { color: "#111", fontSize: 16, fontWeight: "400", textAlign: "center", marginBottom: Spacing.xxl },
-  explanation: { color: "#1e9e4d", fontSize: FontSize.md, lineHeight: 20, fontWeight: "400", width: "100%", marginBottom: Spacing.lg },
+
+  headline: {
+    color:        "#111",
+    fontSize:     22,
+    fontWeight:   "700",
+    textAlign:    "center",
+    marginBottom: Spacing.lg,
+  },
+
+  explanation: {
+    color:        "#22C55E",
+    fontSize:     FontSize.md,
+    lineHeight:   26,
+    fontWeight:   "500",
+    width:        "100%",
+    marginBottom: Spacing.lg,
+  },
+
   doctorImage: { width: 280, height: 320, marginTop: Spacing.sm },
 
-  btnContainer: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, backgroundColor: "#F0F4F8" },
-  btnWrapper:   { borderRadius: 12, overflow: "hidden", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  btn:          { paddingVertical: 18, alignItems: "center", justifyContent: "center" },
-  btnText:      { color: "#fff", fontSize: FontSize.md, fontWeight: "800", letterSpacing: 1.5 },
+  btnContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop:        Spacing.md,
+    paddingBottom:     Spacing.sm,
+    backgroundColor:   "#F0F4F8",
+  },
+  btnWrapper: {
+    borderRadius:  12,
+    overflow:      "hidden",
+    shadowOpacity: 0.4,
+    shadowRadius:  12,
+    shadowOffset:  { width: 0, height: 6 },
+    elevation:     8,
+  },
+  btn:     { paddingVertical: 18, alignItems: "center", justifyContent: "center" },
+  btnText: { color: "#fff", fontSize: FontSize.md, fontWeight: "800", letterSpacing: 1.5 },
 
   tabBarWrapper: { backgroundColor: "#fff", paddingHorizontal: 16, paddingTop: 10, borderTopWidth: 1.5, borderTopColor: "#a0b8d0" },
   tabBar:        { flexDirection: "row", paddingTop: 10 },
