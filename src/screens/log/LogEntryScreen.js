@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,10 +19,10 @@ import { useTheme } from "../../context/ThemeContext";
 import { useLang } from "../../context/LangContext";
 import { useAuth } from "../../context/AuthContext";
 import { FontSize, Spacing, Radius } from "../../theme";
+import client from "../../api/client";
 
 const { width } = Dimensions.get("window");
 
-// Full medication list — same as MedicationsScreen
 const ADHD_MEDICATIONS = [
   { id: "methylphenidate",    name: "Methylphenidate",    brand: "Ritalin, Concerta" },
   { id: "lisdexamfetamine",   name: "Lisdexamfetamine",   brand: "Vyvanse, Elvanse" },
@@ -38,7 +38,6 @@ const ADHD_MEDICATIONS = [
   { id: "other",              name: "Other / Not listed", brand: "" },
 ];
 
-// ── Score colors: 1=best(green) → 5=worst(red) ────────────────────────────────
 const SCORE_COLORS = {
   1: "#22C55E",
   2: "#7AABDB",
@@ -51,7 +50,6 @@ function scoreColor(score) {
   return SCORE_COLORS[score] ?? "#D1D5DB";
 }
 
-// ── Score picker row ───────────────────────────────────────────────────────────
 function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
   return (
     <View style={[sr.wrap, { borderBottomColor: theme.border }]}>
@@ -71,17 +69,12 @@ function ScoreRow({ label, subtitle, value, onChange, labels, theme }) {
           <TouchableOpacity
             key={n}
             onPress={() => onChange(value === n ? null : n)}
-            style={[
-              sr.dot,
-              {
-                backgroundColor: value === n ? scoreColor(n) : (theme.bgSecondary ?? "#F0F4F8"),
-                borderColor: value === n ? scoreColor(n) : theme.border,
-              },
-            ]}
+            style={[sr.dot, {
+              backgroundColor: value === n ? scoreColor(n) : (theme.bgSecondary ?? "#F0F4F8"),
+              borderColor: value === n ? scoreColor(n) : theme.border,
+            }]}
           >
-            <Text style={[sr.dotNum, { color: value === n ? "#FFF" : theme.textMuted }]}>
-              {n}
-            </Text>
+            <Text style={[sr.dotNum, { color: value === n ? "#FFF" : theme.textMuted }]}>{n}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -100,7 +93,6 @@ const sr = StyleSheet.create({
   dotNum: { fontSize: FontSize.sm, fontWeight: "600" },
 });
 
-// ── Section header ─────────────────────────────────────────────────────────────
 function SectionHeader({ title, theme }) {
   return (
     <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.sm, backgroundColor: theme.bgSecondary ?? "#F0F4F8" }}>
@@ -111,7 +103,6 @@ function SectionHeader({ title, theme }) {
   );
 }
 
-// ── Toggle row ─────────────────────────────────────────────────────────────────
 function ToggleRow({ label, subtitle, value, onChange, theme }) {
   return (
     <View style={[sr.wrap, { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: Spacing.md, borderBottomColor: theme.border }]}>
@@ -130,45 +121,60 @@ function ToggleRow({ label, subtitle, value, onChange, theme }) {
   );
 }
 
-// ── Medication selector ────────────────────────────────────────────────────────
-function MedicationSelector({ userMedIds, selected, onToggle, theme }) {
-  // Only show meds the user has saved in their profile
-  const userMeds = ADHD_MEDICATIONS.filter((m) => userMedIds.includes(m.id));
+// ── Medication selector — shows both preset and custom meds ──────────────────
+function MedicationSelector({ userMedIds, customMeds, selected, onToggle, theme }) {
+  // Preset meds the user has selected in their profile
+  const presetMeds = ADHD_MEDICATIONS.filter((m) => userMedIds.includes(m.id));
 
-  if (userMeds.length === 0) return (
-    <View style={{ paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}>
-      <Text style={{ color: theme.textMuted, fontSize: FontSize.sm }}>
-        No medications saved. Add them in My Medication.
-      </Text>
-    </View>
-  );
+  // All available meds combined
+  const allMeds = [
+    ...presetMeds.map(m => ({ id: m.id, name: m.name, brand: m.brand, isCustom: false })),
+    ...customMeds.map(m => ({ id: m._id, name: m.name, brand: m.dosage, isCustom: true })),
+  ];
+
+  if (allMeds.length === 0) {
+    return (
+      <View style={{ paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}>
+        <Text style={{ color: theme.textMuted, fontSize: FontSize.sm }}>
+          No medications saved. Add them in My Medication.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md }}>
-      {userMeds.map((med) => {
+      {allMeds.map((med) => {
         const active = selected.includes(med.id);
         return (
           <TouchableOpacity
             key={med.id}
-            style={[
-              medSel.row,
-              {
-                backgroundColor: active ? (theme.accentBg ?? '#EBF4FF') : (theme.surface ?? theme.bg),
-                borderColor: active ? theme.accent : theme.border,
-              },
-            ]}
+            style={[medSel.row, {
+              backgroundColor: active ? (theme.accentBg ?? "#EBF4FF") : (theme.surface ?? theme.bg),
+              borderColor: active ? theme.accent : theme.border,
+            }]}
             onPress={() => onToggle(med.id)}
             activeOpacity={0.7}
           >
             <View style={{ flex: 1 }}>
-              <Text style={[medSel.name, { color: active ? theme.accent : theme.text }]}>
-                {med.name}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={[medSel.name, { color: active ? theme.accent : theme.text }]}>
+                  {med.name}
+                </Text>
+                {med.isCustom && (
+                  <View style={[medSel.customBadge, { backgroundColor: theme.accentBg, borderColor: theme.accentBorder }]}>
+                    <Text style={[medSel.customBadgeText, { color: theme.accent }]}>custom</Text>
+                  </View>
+                )}
+              </View>
               {med.brand ? (
                 <Text style={[medSel.brand, { color: theme.textMuted }]}>{med.brand}</Text>
               ) : null}
             </View>
-            <View style={[medSel.check, { borderColor: active ? theme.accent : theme.border, backgroundColor: active ? theme.accent : 'transparent' }]}>
+            <View style={[medSel.check, {
+              borderColor: active ? theme.accent : theme.border,
+              backgroundColor: active ? theme.accent : "transparent",
+            }]}>
               {active && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
           </TouchableOpacity>
@@ -179,13 +185,15 @@ function MedicationSelector({ userMedIds, selected, onToggle, theme }) {
 }
 
 const medSel = StyleSheet.create({
-  row:   { flexDirection: "row", alignItems: "center", padding: Spacing.md, marginBottom: Spacing.xs, borderRadius: 12, borderWidth: 1 },
-  name:  { fontSize: FontSize.md, fontWeight: "500" },
-  brand: { fontSize: FontSize.sm, marginTop: 2 },
-  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  row:             { flexDirection: "row", alignItems: "center", padding: Spacing.md, marginBottom: Spacing.xs, borderRadius: 12, borderWidth: 1 },
+  name:            { fontSize: FontSize.md, fontWeight: "500" },
+  brand:           { fontSize: FontSize.sm, marginTop: 2 },
+  check:           { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  customBadge:     { borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1 },
+  customBadgeText: { fontSize: 10, fontWeight: "600" },
 });
 
-// ── Main screen ────────────────────────────────────────────────────────────────
+// ── Main screen ───────────────────────────────────────────────────────────────
 export default function LogEntryScreen({ navigation, route }) {
   const { date, log: existingLog } = route.params ?? {};
   const { theme }  = useTheme();
@@ -197,36 +205,35 @@ export default function LogEntryScreen({ navigation, route }) {
 
   const isEdit = !!existingLog;
 
-  // ── Field state ──────────────────────────────────────────────────────────────
-  const [mood,        setMood]        = useState(existingLog?.mood           ?? null);
-  const [energy,      setEnergy]      = useState(existingLog?.energy         ?? null);
-  const [focus,       setFocus]       = useState(existingLog?.focus          ?? null);
-  const [impulsivity, setImpulsivity] = useState(existingLog?.impulsivity    ?? null);
-  const [sleep,       setSleep]       = useState(existingLog?.sleep          ?? null);
-  const [tasks,       setTasks]       = useState(existingLog?.tasksCompleted ?? null);
+  const [mood,        setMood]        = useState(existingLog?.mood            ?? null);
+  const [energy,      setEnergy]      = useState(existingLog?.energy          ?? null);
+  const [focus,       setFocus]       = useState(existingLog?.focus           ?? null);
+  const [impulsivity, setImpulsivity] = useState(existingLog?.impulsivity     ?? null);
+  const [sleep,       setSleep]       = useState(existingLog?.sleep           ?? null);
+  const [tasks,       setTasks]       = useState(existingLog?.tasksCompleted  ?? null);
   const [tookMed,     setTookMed]     = useState(existingLog?.medicationTaken ?? false);
-  // Selected medication IDs for today — prefill from existing log if editing
   const [selectedMeds, setSelectedMeds] = useState(existingLog?.medicationNames ?? []);
-  const [note,        setNote]        = useState(existingLog?.note           ?? "");
+  const [note,        setNote]        = useState(existingLog?.note            ?? "");
   const [saving,      setSaving]      = useState(false);
 
-  // IDs of meds the user has saved in their profile
+  // ── Custom medications from DB ─────────────────────────────────────────────
+  const [customMeds, setCustomMeds] = useState([]);
+
+  useEffect(() => {
+    client.get("/api/patient/medications?active=true")
+      .then(res => setCustomMeds(res.data?.data ?? []))
+      .catch(() => {});
+  }, []);
+
   const userMedIds = user?.medications ?? [];
-  console.log('[LogEntry] user.medications:', JSON.stringify(user?.medications));
-  console.log('[LogEntry] userMedIds:', JSON.stringify(userMedIds));
-  console.log('[LogEntry] full user keys:', Object.keys(user ?? {}));
 
   const toggleMed = (id) =>
-    setSelectedMeds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedMeds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const displayDate = (() => {
     if (!date) return "";
     const d = new Date(date);
-    return d.toLocaleDateString(undefined, {
-      weekday: "long", year: "numeric", month: "long", day: "numeric",
-    });
+    return d.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   })();
 
   const hasAnyData = mood || energy || focus || impulsivity || sleep || tasks || tookMed || note;
@@ -247,7 +254,7 @@ export default function LogEntryScreen({ navigation, route }) {
       if (tasks       != null) payload.tasksCompleted = tasks;
       payload.medicationTaken = tookMed;
       payload.medicationNames = tookMed ? selectedMeds : [];
-      payload.note = note.trim(); // always send note, even if empty string
+      payload.note = note.trim();
 
       await saveLog(payload);
       navigation.goBack();
@@ -265,8 +272,7 @@ export default function LogEntryScreen({ navigation, route }) {
     Alert.alert("Delete log", "Are you sure you want to delete this log?", [
       { text: t.cancel ?? "Cancel", style: "cancel" },
       {
-        text: "Delete",
-        style: "destructive",
+        text: "Delete", style: "destructive",
         onPress: async () => {
           try {
             await deleteLog(date);
@@ -321,56 +327,24 @@ export default function LogEntryScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Section 1: How did you feel */}
         <SectionHeader title={t.howDidYouFeel ?? "How did you feel?"} theme={theme} />
         <View style={s.section}>
           <ScoreRow label={t.mood ?? "Mood"}     value={mood}   onChange={setMood}   labels={moodLabels}   theme={theme} />
           <ScoreRow label={t.energy ?? "Energy"} value={energy} onChange={setEnergy} labels={energyLabels} theme={theme} />
         </View>
 
-        {/* Section 2: ADHD symptoms */}
         <SectionHeader title={t.adhdSymptoms ?? "ADHD symptoms"} theme={theme} />
         <View style={s.section}>
-          <ScoreRow
-            label={t.focus ?? "Focus"}
-            subtitle="1 = excellent focus, 5 = cannot focus at all"
-            value={focus}
-            onChange={setFocus}
-            labels={focusLabels}
-            theme={theme}
-          />
-          <ScoreRow
-            label={t.impulsivity ?? "Impulsivity"}
-            subtitle="1 = very calm, 5 = very impulsive"
-            value={impulsivity}
-            onChange={setImpulsivity}
-            labels={impulsivityLabels}
-            theme={theme}
-          />
+          <ScoreRow label={t.focus ?? "Focus"} subtitle="1 = excellent focus, 5 = cannot focus at all" value={focus} onChange={setFocus} labels={focusLabels} theme={theme} />
+          <ScoreRow label={t.impulsivity ?? "Impulsivity"} subtitle="1 = very calm, 5 = very impulsive" value={impulsivity} onChange={setImpulsivity} labels={impulsivityLabels} theme={theme} />
         </View>
 
-        {/* Section 3: Sleep & tasks */}
         <SectionHeader title={t.sleepTasks ?? "Sleep & tasks"} theme={theme} />
         <View style={s.section}>
-          <ScoreRow
-            label={t.sleepQuality ?? "Sleep quality"}
-            subtitle="How well did you sleep last night?"
-            value={sleep}
-            onChange={setSleep}
-            labels={sleepLabels}
-            theme={theme}
-          />
-          <ScoreRow
-            label={t.tasksCompleted ?? "Tasks completed"}
-            subtitle="How productive were you today?"
-            value={tasks}
-            onChange={setTasks}
-            labels={["All done", "Most", "Some", "Few", "None"]}
-            theme={theme}
-          />
+          <ScoreRow label={t.sleepQuality ?? "Sleep quality"} subtitle="How well did you sleep last night?" value={sleep} onChange={setSleep} labels={sleepLabels} theme={theme} />
+          <ScoreRow label={t.tasksCompleted ?? "Tasks completed"} subtitle="How productive were you today?" value={tasks} onChange={setTasks} labels={["All done", "Most", "Some", "Few", "None"]} theme={theme} />
         </View>
 
-        {/* Section 4: Medication */}
         <SectionHeader title={t.medicationSec ?? "Medication"} theme={theme} />
         <View style={s.section}>
           <ToggleRow
@@ -379,10 +353,10 @@ export default function LogEntryScreen({ navigation, route }) {
             onChange={setTookMed}
             theme={theme}
           />
-          {/* Show medication selector when toggle is on */}
           {tookMed && (
             <MedicationSelector
               userMedIds={userMedIds}
+              customMeds={customMeds}
               selected={selectedMeds}
               onToggle={toggleMed}
               theme={theme}
@@ -390,7 +364,6 @@ export default function LogEntryScreen({ navigation, route }) {
           )}
         </View>
 
-        {/* Section 5: Notes */}
         <SectionHeader title={t.notes ?? "Notes"} theme={theme} />
         <View style={[s.section, { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }]}>
           <TextInput
@@ -406,7 +379,6 @@ export default function LogEntryScreen({ navigation, route }) {
           />
         </View>
 
-        {/* Score legend */}
         <View style={s.legend}>
           <Text style={[s.legendText, { color: theme.textMuted }]}>{t.scoreBest ?? "1 = Best"}</Text>
           <View style={s.legendDots}>
@@ -418,7 +390,6 @@ export default function LogEntryScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* Save button */}
       <View style={[s.bottomWrap, { paddingBottom: (insets.bottom || 16) + Spacing.md }]}>
         <TouchableOpacity onPress={handleSave} activeOpacity={0.88} style={s.saveBtn} disabled={saving}>
           <LinearGradient
@@ -440,7 +411,6 @@ export default function LogEntryScreen({ navigation, route }) {
 
 const makeStyles = (t, insets) => StyleSheet.create({
   root: { flex: 1, backgroundColor: t.bgSecondary ?? "#F0F4F8" },
-
   header: {
     paddingTop: insets.top + Spacing.sm,
     paddingBottom: Spacing.lg,
@@ -454,37 +424,14 @@ const makeStyles = (t, insets) => StyleSheet.create({
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle:  { color: "#FFF", fontSize: FontSize.lg, fontWeight: "600" },
   headerDate:   { color: "rgba(255,255,255,0.75)", fontSize: FontSize.xs, marginTop: 2 },
-
-  section: { backgroundColor: t.bg ?? "#FFFFFF" },
-
-  medRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingVertical: 8, borderBottomWidth: 1,
-  },
-
-  noteInput: {
-    borderWidth: 1.5, borderRadius: Radius.md,
-    padding: Spacing.md, fontSize: FontSize.md,
-    minHeight: 100, lineHeight: 22,
-  },
-
-  legend: {
-    flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.lg,
-  },
-  legendDots: { flexDirection: "row", gap: 4 },
-  legendDot:  { width: 12, height: 12, borderRadius: 6 },
-  legendText: { fontSize: FontSize.xs },
-
-  bottomWrap: {
-    paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
-    backgroundColor: t.bg ?? "#FFFFFF",
-    borderTopWidth: 1, borderTopColor: t.border,
-  },
-  saveBtn: {
-    width: "100%", height: 46, borderRadius: 8,
-    borderWidth: 1, borderColor: t.accentLight ?? "#7AABDB", overflow: "hidden",
-  },
+  section:      { backgroundColor: t.bg ?? "#FFFFFF" },
+  noteInput:    { borderWidth: 1.5, borderRadius: Radius.md, padding: Spacing.md, fontSize: FontSize.md, minHeight: 100, lineHeight: 22 },
+  legend:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.sm, paddingVertical: Spacing.lg },
+  legendDots:   { flexDirection: "row", gap: 4 },
+  legendDot:    { width: 12, height: 12, borderRadius: 6 },
+  legendText:   { fontSize: FontSize.xs },
+  bottomWrap:   { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, backgroundColor: t.bg ?? "#FFFFFF", borderTopWidth: 1, borderTopColor: t.border },
+  saveBtn:      { width: "100%", height: 46, borderRadius: 8, borderWidth: 1, borderColor: t.accentLight ?? "#7AABDB", overflow: "hidden" },
   saveBtnGradient: { flex: 1, justifyContent: "center", alignItems: "center" },
-  saveBtnText: { color: "#FFF", fontSize: FontSize.md, fontWeight: "800", letterSpacing: 1.5 },
+  saveBtnText:  { color: "#FFF", fontSize: FontSize.md, fontWeight: "800", letterSpacing: 1.5 },
 });
